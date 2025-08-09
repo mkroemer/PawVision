@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PawVision Control</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/png" href="/static/pawvision.png">
+    <link rel="apple-touch-icon" href="/static/pawvision.png">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(255, 145, 77, 0.2);
+            backdrop-filter: blur(10px);
+        }
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .logo {
+            max-width: 80px;
+            height: auto;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+            flex-shrink: 0;
+        }
+        h1 {
+            color: #2E2E2E;
+            margin: 0;
+            font-size: 2.2em;
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+        @media (max-width: 600px) {
+            .header-content {
+                flex-direction: column;
+                gap: 10px;
+            }
+            h1 {
+                font-size: 1.8em;
+            }
+        }
+        .section {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 25px;
+            margin-bottom: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(255, 145, 77, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .section:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(255, 145, 77, 0.25);
+        }
+        .section h2 {
+            color: #2E2E2E;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 1.4em;
+            font-weight: 500;
+            border-bottom: 2px solid #FF914D;
+            padding-bottom: 10px;
+        }
+        button {
+            padding: 12px 20px;
+            margin: 8px 5px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(45deg, #FF914D, #FF7A2E);
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 145, 77, 0.3);
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 145, 77, 0.4);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        input, select {
+            margin: 8px 0;
+            padding: 12px;
+            width: 100%;
+            box-sizing: border-box;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #FF914D;
+        }
+        label {
+            display: block;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            color: #2E2E2E;
+            font-weight: 500;
+        }
+        input[type="checkbox"] {
+            width: auto;
+            margin-right: 8px;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            background: rgba(255, 255, 255, 0.8);
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(255, 145, 77, 0.2);
+            transition: all 0.2s ease;
+        }
+        li:hover {
+            background: rgba(255, 255, 255, 0.95);
+            transform: translateX(5px);
+            border-color: rgba(255, 145, 77, 0.4);
+        }
+        li span {
+            font-weight: 500;
+            color: #2E2E2E;
+        }
+        form.inline {
+            display: inline;
+        }
+        .danger {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24) !important;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3) !important;
+        }
+        .danger:hover {
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4) !important;
+        }
+        .secondary {
+            background: linear-gradient(45deg, #3EC1B9, #2BA8A0) !important;
+            box-shadow: 0 4px 15px rgba(62, 193, 185, 0.3) !important;
+        }
+        .secondary:hover {
+            box-shadow: 0 6px 20px rgba(62, 193, 185, 0.4) !important;
+        }
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 10px;
+        }
+        .control-button {
+            width: 100%;
+            padding: 24px 20px !important;
+            font-size: 18px !important;
+        }
+        .schedule-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 145, 77, 0.2);
+        }
+        .schedule-item input[type="time"] {
+            margin: 0;
+            flex: 1;
+        }
+        .tabs {
+            display: flex;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px 15px 0 0;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(255, 145, 77, 0.1);
+        }
+        .tab {
+            flex: 1;
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.7);
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            color: #2E2E2E;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+        .tab:hover {
+            background: rgba(255, 145, 77, 0.1);
+        }
+        .tab.active {
+            background: rgba(255, 145, 77, 0.2);
+            border-bottom-color: #FF914D;
+            color: #FF914D;
+        }
+        .tab-content {
+            display: none;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 25px;
+            border-radius: 0 0 15px 15px;
+            box-shadow: 0 8px 32px rgba(255, 145, 77, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin-bottom: 25px;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .tab-content h2 {
+            color: #2E2E2E;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 1.4em;
+            font-weight: 500;
+            border-bottom: 2px solid #FF914D;
+            padding-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <img src="/static/pawvision.png" alt="PawVision Logo" class="logo">
+            <h1>PawVision Control</h1>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active" onclick="openTab(event, 'control')">🎮 Control</button>
+        <button class="tab" onclick="openTab(event, 'playlist')">📋 Playlist</button>
+        <button class="tab" onclick="openTab(event, 'settings')">⚙️ Settings</button>
+    </div>
+
+    <div id="control" class="tab-content active">
+        <div class="controls-grid">
+            <form method="POST" action="/api/play">
+                <button type="submit" class="control-button">▶ Play Now</button>
+            </form>
+            <form method="POST" action="/api/stop">
+                <button type="submit" class="control-button danger">⏹ Stop</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="playlist" class="tab-content">
+        <h2>Upload Video</h2>
+        <form method="POST" action="/upload" enctype="multipart/form-data">
+            <input type="file" name="file" required>
+            <button type="submit" class="secondary">Upload</button>
+        </form>
+
+        <h2 style="margin-top: 30px;">Video Library</h2>
+        <ul>
+            {% for v in videos %}
+            <li>
+                <span>{{ v }}</span>
+                <form method="POST" action="/delete" class="inline">
+                    <input type="hidden" name="path" value="{{ v }}">
+                    <button type="submit" class="danger">Delete</button>
+                </form>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div id="settings" class="tab-content">
+        <h2>Configuration</h2>
+        <form method="POST" action="/settings">
+            <label>Timeout (minutes):</label>
+            <input type="number" name="timeout" value="{{ settings.timeout_minutes }}">
+
+            <label>Volume (0-100):</label>
+            <input type="number" name="volume" value="{{ settings.volume }}">
+
+            <label>Night mode start hour:</label>
+            <input type="number" name="night_start" value="{{ settings.night_mode_start }}">
+
+            <label>Night mode end hour:</label>
+            <input type="number" name="night_end" value="{{ settings.night_mode_end }}">
+
+            <label><input type="checkbox" name="button_enabled" {% if settings.button_enabled %}checked{% endif %}> Enable Button</label>
+
+            <label>Button disable start hour:</label>
+            <input type="number" name="button_disable_start" value="{{ settings.button_disable_start }}">
+
+            <label>Button disable end hour:</label>
+            <input type="number" name="button_disable_end" value="{{ settings.button_disable_end }}">
+
+            <label><input type="checkbox" name="second_press_stops" {% if settings.second_press_stops %}checked{% endif %}> Second Press Stops Video</label>
+
+            <label>Play Schedule:</label>
+            <div id="schedule-list">
+                {% for time in settings.play_schedule %}
+                <div class="schedule-item">
+                    <input type="time" name="schedule_times" value="{{ time }}" style="width: auto; display: inline-block; margin-right: 10px;">
+                    <button type="button" class="danger" onclick="removeScheduleItem(this)" style="padding: 6px 12px;">Remove</button>
+                </div>
+                {% endfor %}
+            </div>
+            <button type="button" class="secondary" onclick="addScheduleItem()" style="margin-top: 10px;">Add Schedule Time</button>
+
+            <button type="submit" class="secondary">Save Settings</button>
+        </form>
+    </div>
+
+    <script>
+        function openTab(evt, tabName) {
+            var i, tabcontent, tabs;
+            
+            // Hide all tab content
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].classList.remove("active");
+            }
+            
+            // Remove active class from all tabs
+            tabs = document.getElementsByClassName("tab");
+            for (i = 0; i < tabs.length; i++) {
+                tabs[i].classList.remove("active");
+            }
+            
+            // Show the selected tab content and mark the button as active
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+
+        function addScheduleItem() {
+            const scheduleList = document.getElementById('schedule-list');
+            const newItem = document.createElement('div');
+            newItem.className = 'schedule-item';
+            newItem.innerHTML = `
+                <input type="time" name="schedule_times" value="" style="width: auto; display: inline-block; margin-right: 10px;">
+                <button type="button" class="danger" onclick="removeScheduleItem(this)" style="padding: 6px 12px;">Remove</button>
+            `;
+            scheduleList.appendChild(newItem);
+        }
+
+        function removeScheduleItem(button) {
+            button.parentElement.remove();
+        }
+    </script>
+</body>
+</html>
