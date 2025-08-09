@@ -251,13 +251,10 @@
 
     <div id="control" class="tab-content active">
         <div class="controls-grid">
-            <form method="POST" action="/api/play">
-                <button type="submit" class="control-button">▶ Play Now</button>
-            </form>
-            <form method="POST" action="/api/stop">
-                <button type="submit" class="control-button danger">⏹ Stop</button>
-            </form>
+            <button onclick="playVideo()" class="control-button">▶ Play Now</button>
+            <button onclick="stopVideo()" class="control-button danger">⏹ Stop</button>
         </div>
+        <div id="status-message" style="margin-top: 20px; padding: 10px; border-radius: 8px; display: none;"></div>
     </div>
 
     <div id="playlist" class="tab-content">
@@ -355,6 +352,62 @@
 
         function removeScheduleItem(button) {
             button.parentElement.remove();
+        }
+
+        function showStatus(message, isError = false) {
+            const statusDiv = document.getElementById('status-message');
+            statusDiv.textContent = message;
+            statusDiv.style.display = 'block';
+            statusDiv.style.backgroundColor = isError ? 'rgba(255, 107, 107, 0.2)' : 'rgba(62, 193, 185, 0.2)';
+            statusDiv.style.color = isError ? '#ee5a24' : '#2BA8A0';
+            statusDiv.style.border = `1px solid ${isError ? 'rgba(255, 107, 107, 0.4)' : 'rgba(62, 193, 185, 0.4)'}`;
+            
+            // Hide the message after 3 seconds
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        function playVideo() {
+            fetch('/api/play', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showStatus('Video playback started!', false);
+                } else {
+                    showStatus(data.message || 'Failed to start playback', true);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showStatus('Error starting playback', true);
+            });
+        }
+
+        function stopVideo() {
+            fetch('/api/stop', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showStatus('Video playback stopped!', false);
+                } else {
+                    showStatus(data.message || 'Failed to stop playback', true);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showStatus('Error stopping playback', true);
+            });
         }
     </script>
 </body>

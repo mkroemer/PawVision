@@ -2,9 +2,9 @@
 set -e
 
 # ---------------- CONFIG ----------------
-REPO_USER="yourusername"   # <-- CHANGE THIS to your GitHub username
-REPO_NAME="pawvision"      # <-- CHANGE THIS to your repo name
-BRANCH="main"              # or "master"
+REPO_USER="mkroemer"
+REPO_NAME="pawvision"
+BRANCH="main"
 INSTALL_DIR="/home/pi"
 SETTINGS_FILE="$INSTALL_DIR/pawvision_settings.json"
 DEFAULT_SETTINGS_URL="https://raw.githubusercontent.com/$REPO_USER/$REPO_NAME/$BRANCH/default_settings.json"
@@ -18,7 +18,7 @@ if [ ! -f "$INSTALL_DIR/pawvision.py" ] || [ ! -f "$SERVICE_FILE" ]; then
 fi
 
 if $FRESH_INSTALL; then
-    echo "🐾 Starting fresh PawVision installation..."
+    echo "🐾 Starting PawVision installation..."
 else
     echo "🔄 Updating existing PawVision installation..."
 fi
