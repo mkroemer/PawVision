@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<a href="https://mkroemer.github.io/PawVision/" target="_blank" class="header-link">📚 Docs</a>l>
 <head>
     <title>PawVision Control</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -52,75 +53,21 @@
         <h2 style="margin-top: 30px;">Video Library</h2>
         <div style="width: 100%;">
             {% for v in videos %}
-            <div class="video-item" id="video-{{ loop.index }}">
+            <div class="video-item">
                 <div class="video-info">
-                    <strong style="font-size: 1.1em;">{{ v.display_title }}</strong>
-                    {% if v.title and v.title != v.filename %}
-                    <br><small style="color: #888;">File: {{ v.filename }}</small>
-                    {% endif %}
-                    <br>
+                    <strong style="font-size: 1.1em;">{{ v.filename }}</strong><br>
                     <small style="color: #666; margin-top: 5px; display: inline-block;">
-                        Size: {{ v.size_mb }} MB | 
-                        Duration: {{ v.duration_str }}
-                        {% if v.effective_duration_str != v.duration_str %}
-                        | Effective: {{ v.effective_duration_str }}
-                        {% endif %}
+                        Size: {{ v.size_mb }} MB | Duration: {{ v.duration_str }}
                     </small>
-                    {% if v.custom_start_time > 0 or v.custom_end_time %}
-                    <br><small style="color: #007acc;">
-                        Custom range: {{ "%.1f"|format(v.custom_start_time) }}s - 
-                        {% if v.custom_end_time %}{{ "%.1f"|format(v.custom_end_time) }}s{% else %}end{% endif %}
-                    </small>
-                    {% endif %}
                 </div>
                 <div class="video-actions">
-                    <button class="edit-video-btn secondary" 
-                            data-path="{{ v.path }}" 
-                            data-title="{{ v.title or '' }}" 
-                            data-start="{{ v.custom_start_time }}" 
-                            data-end="{{ v.custom_end_time or '' }}" 
-                            data-duration="{{ v.duration or 0 }}"
-                            style="padding: 8px 16px; font-size: 0.9em; margin-right: 8px;">Edit</button>
                     <form method="POST" action="/delete" class="inline" style="margin: 0;">
                         <input type="hidden" name="path" value="{{ v.path }}">
-                        <button type="submit" class="danger" style="padding: 8px 16px; font-size: 0.9em;" 
-                                onclick="return confirm('Are you sure you want to delete {{ v.filename }}?')">Delete</button>
+                        <button type="submit" class="danger" style="padding: 8px 16px; font-size: 0.9em;">Delete</button>
                     </form>
                 </div>
             </div>
             {% endfor %}
-        </div>
-        
-        <!-- Video Edit Modal -->
-        <div id="edit-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000;">
-            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 12px; min-width: 400px; max-width: 90vw; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
-                <h3 style="margin-top: 0; color: #2E2E2E;">Edit Video Settings</h3>
-                <form id="edit-form" method="POST" action="/video/update">
-                    <input type="hidden" id="edit-path" name="path">
-                    
-                    <label style="display: block; margin-bottom: 15px;">
-                        <strong>Custom Title:</strong><br>
-                        <input type="text" id="edit-title" name="title" placeholder="Leave empty to use filename" style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 6px;">
-                    </label>
-                    
-                    <label style="display: block; margin-bottom: 15px;">
-                        <strong>Start Time (seconds):</strong><br>
-                        <input type="number" id="edit-start" name="custom_start_time" min="0" step="0.1" style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 6px;">
-                        <small style="color: #666;">Skip intro or unwanted beginning</small>
-                    </label>
-                    
-                    <label style="display: block; margin-bottom: 20px;">
-                        <strong>End Time (seconds):</strong><br>
-                        <input type="number" id="edit-end" name="custom_end_time" min="0" step="0.1" style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 6px;">
-                        <small style="color: #666;">Leave empty for full duration or set to skip credits</small>
-                    </label>
-                    
-                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                        <button type="button" onclick="closeEditModal()" class="secondary">Cancel</button>
-                        <button type="submit">Save Changes</button>
-                    </div>
-                </form>
-            </div>
         </div>
     </div>
 
@@ -187,19 +134,24 @@
                 <!-- Video Settings Card -->
                 <div class="settings-card">
                     <h3>🎬 Video Settings</h3>
-                    <label>Playback Duration (minutes): <span class="tooltip"><i>?</i><span class="tooltiptext">How long videos will play before automatically stopping</span></span></label>
+                    <label>Playback Duration (minutes):</label>
+                    <small>How long videos will play before automatically stopping</small>
                     <input type="number" name="playback_duration" value="{{ settings.playback_duration_minutes }}">
                     
-                    <label>Post-Playback Cooldown (minutes): <span class="tooltip"><i>?</i><span class="tooltiptext">Wait time before allowing another video to start</span></span></label>
+                    <label>Post-Playback Cooldown (minutes):</label>
+                    <small>Wait time before allowing another video to start</small>
                     <input type="number" name="post_playback_cooldown" value="{{ settings.post_playback_cooldown_minutes }}">
 
-                    <label>Volume (0-100): <span class="tooltip"><i>?</i><span class="tooltiptext">Default volume level for video playback</span></span></label>
+                    <label>Volume (0-100):</label>
+                    <small>Default volume level for video playback</small>
                     <input type="number" name="volume" value="{{ settings.volume }}">
 
-                    <label>Night mode start time: <span class="tooltip"><i>?</i><span class="tooltiptext">When to automatically lower volume for sleeping humans</span></span></label>
+                    <label>Night mode start time:</label>
+                    <small>When to automatically lower volume for sleeping humans</small>
                     <input type="time" name="night_start" value="{{ settings.night_mode_start }}">
 
-                    <label>Night mode end time: <span class="tooltip"><i>?</i><span class="tooltiptext">When normal volume resumes</span></span></label>
+                    <label>Night mode end time:</label>
+                    <small>When normal volume resumes</small>
                     <input type="time" name="night_end" value="{{ settings.night_mode_end }}">
                 </div>
 
@@ -210,12 +162,15 @@
                     <label><input type="checkbox" name="button_enabled" {% if settings.button_enabled %}checked{% endif %} onchange="toggleButtonSettings()"> Enable Button</label>
                     
                     <div id="button_settings">
-                        <label><input type="checkbox" name="second_press_stops" {% if settings.second_press_stops %}checked{% endif %} {% if not settings.button_enabled %}disabled{% endif %}> Second Press Stops Video <span class="tooltip"><i>?</i><span class="tooltiptext">If disabled, button only starts videos, never stops them</span></span></label>
+                        <label><input type="checkbox" name="second_press_stops" {% if settings.second_press_stops %}checked{% endif %} {% if not settings.button_enabled %}disabled{% endif %}> Second Press Stops Video</label>
+                        <small>If disabled, button only starts videos, never stops them</small>
                         
-                        <label>Button disable start time: <span class="tooltip"><i>?</i><span class="tooltiptext">Time when button should be disabled (e.g., during sleep)</span></span></label>
+                        <label>Button disable start time:</label>
+                        <small>Time when button should be disabled (e.g., during sleep)</small>
                         <input type="time" name="button_disable_start" value="{{ settings.button_disable_start or '' }}" {% if not settings.button_enabled %}disabled{% endif %}>
 
-                        <label>Button disable end time: <span class="tooltip"><i>?</i><span class="tooltiptext">Time when button becomes active again</span></span></label>
+                        <label>Button disable end time:</label>
+                        <small>Time when button becomes active again</small>
                         <input type="time" name="button_disable_end" value="{{ settings.button_disable_end or '' }}" {% if not settings.button_enabled %}disabled{% endif %}>
                     </div>
                 </div>
@@ -227,9 +182,11 @@
                     <label><input type="checkbox" name="motion_sensor_enabled" {% if settings.motion_sensor_enabled %}checked{% endif %} onchange="toggleMotionSettings()"> Enable Motion Sensor</label>
                     
                     <div id="motion_settings">
-                        <label><input type="checkbox" name="motion_stop_enabled" {% if settings.motion_stop_enabled %}checked{% endif %} {% if not settings.motion_sensor_enabled %}disabled{% endif %}> Stop video when no motion detected <span class="tooltip"><i>?</i><span class="tooltiptext">Saves energy by stopping videos when your pet walks away</span></span></label>
+                        <label><input type="checkbox" name="motion_stop_enabled" {% if settings.motion_stop_enabled %}checked{% endif %} {% if not settings.motion_sensor_enabled %}disabled{% endif %}> Stop video when no motion detected</label>
+                        <small>Saves energy by stopping videos when your pet walks away</small>
                         
-                        <label>Motion timeout (seconds): <span class="tooltip"><i>?</i><span class="tooltiptext">Time to wait before stopping video when no motion is detected</span></span></label>
+                        <label>Motion timeout (seconds):</label>
+                        <small>Time to wait before stopping video when no motion is detected</small>
                         <input type="number" name="motion_stop_timeout" value="{{ settings.motion_stop_timeout_seconds }}" min="30" max="3600" {% if not settings.motion_sensor_enabled %}disabled{% endif %}>
                     </div>
                 </div>
@@ -238,7 +195,7 @@
                 <div class="settings-card">
                     <h3>📅 Play Schedule</h3>
                     <small>Set automatic video playback times for daily entertainment</small>
-                    <label>Automatic play times: <span class="tooltip"><i>?</i><span class="tooltiptext">Set specific times when videos should automatically start playing</span></span></label>
+                    <label>Automatic play times:</label>
                     <div id="schedule-list">
                         {% for time in settings.play_schedule %}
                         <div class="schedule-item">
@@ -260,7 +217,7 @@
     <footer class="footer">
         <div class="footer-content">
             <p>🐾 Made with ❤️ for pets and their humans</p>
-            <p><a href="https://www.gnu.org/licenses/agpl-3.0" target="_blank">AGPL v3</a></p>
+            <p>Licensed under <a href="https://www.gnu.org/licenses/agpl-3.0" target="_blank">AGPL v3</a></p>
         </div>
     </footer>
 </body>

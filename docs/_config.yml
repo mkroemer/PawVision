@@ -1,0 +1,39 @@
+---
+title: PawVision Documentation
+description: A Raspberry Pi-based Pet TV system with web interface
+theme: minima
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+  - jekyll-seo-tag
+
+markdown: kramdown
+highlighter: rouge
+
+# Navigation structure
+header_pages:
+  - index.md
+  - configuration.md
+  - api.md
+  - releases.md
+
+# GitHub repository info
+github_username: mkroemer
+repository: PawVision
+
+# Social links
+social_links:
+  github: mkroemer/PawVision
+
+# Build settings
+safe: true
+incremental: false
+
+# Exclude from processing
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - vendor/
+  - .bundle/
+  - .sass-cache/
+  - .jekyll-cache/
