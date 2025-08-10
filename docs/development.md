@@ -3,11 +3,19 @@ layout: pawvision-theme
 title: Developer Guide
 ---
 
- - **Clone the repository**:
-	 git clone https://github.com/mkroemer/PawVision.git
-	 cd PawVision
-	 ```
-# 🧪 Running and Writing Tests
+# Developer Guide
+
+## Getting Started
+
+Follow these steps to set up your development environment:
+
+**Clone the repository**
+```bash
+git clone https://github.com/mkroemer/PawVision.git
+cd PawVision
+```
+
+## 🧪 Running and Writing Tests
 
 PawVision uses [pytest](https://docs.pytest.org/) for all unit and integration tests. All test files are located in the `tests/` directory and are organized by domain (e.g., config, statistics, web interface).
 

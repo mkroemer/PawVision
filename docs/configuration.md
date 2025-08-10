@@ -2,6 +2,7 @@
 layout: pawvision-theme
 title: Configuration Guide
 ---
+# Configuration Guide
 
 Complete setup and configuration guide for your PawVision Pet TV system.
 
@@ -16,6 +17,7 @@ curl -sSL https://raw.githubusercontent.com/mkroemer/pawvision/main/install.sh |
 ```
 
 This installer will:
+
 - Install all required dependencies
 - Download the latest PawVision version
 - Preserve your existing videos and settings
@@ -24,31 +26,43 @@ This installer will:
 ### Manual Installation
 
 1. **Clone the repository**:
+
    ```bash
    git clone https://github.com/mkroemer/PawVision.git
    cd PawVision
    ```
+2. Create a virtual environment (optional but recommended):
 
-2. **Install dependencies**:
    ```bash
+   python -m venv venv
+   source venv/bin/activate
    ```
+3. **Install dependencies**:
 
-3. **Run PawVision**:
+   ```bash
+    pip install -r requirements.txt
+   ```
+4. **Run PawVision**:
+
+   ```bash
    python pawvision.py
    ```
 
 ## Web Interface
+
 - **Comprehensive settings** all in one place
+- **Real-time monitoring** of your pet's viewing habits
+- http://raspberrypi.local:5000
 
 ## Configuration Options
 
 ### Video Settings
 
-| Setting | Description | Range | Default |
-|---------|-------------|--------|---------|
-| **Playback Duration** | How long videos play | 1-180 minutes | 30 minutes |
-| **Post-Playback Cooldown** | Delay before next video | 0-60 minutes | 5 minutes |
-| **Volume** | Audio volume level | 0-100 | 50 |
+| Setting                          | Description             | Range         | Default    |
+| -------------------------------- | ----------------------- | ------------- | ---------- |
+| **Playback Duration**      | How long videos play    | 1-180 minutes | 30 minutes |
+| **Post-Playback Cooldown** | Delay before next video | 0-60 minutes  | 5 minutes  |
+| **Volume**                 | Audio volume level      | 0-100         | 50         |
 
 ```json
 {
@@ -62,10 +76,10 @@ This installer will:
 
 Configure quiet hours when volume is muted:
 
-| Setting | Description | Format | Default |
-|---------|-------------|--------|---------|
-| **Night Mode Start** | When quiet hours begin | HH:MM | 22:00 |
-| **Night Mode End** | When quiet hours end | HH:MM | 06:00 |
+| Setting                    | Description            | Format | Default |
+| -------------------------- | ---------------------- | ------ | ------- |
+| **Night Mode Start** | When quiet hours begin | HH:MM  | 22:00   |
+| **Night Mode End**   | When quiet hours end   | HH:MM  | 06:00   |
 
 ```json
 {
@@ -78,13 +92,13 @@ Configure quiet hours when volume is muted:
 
 Physical GPIO button configuration:
 
-| Setting | Description | Default |
-|---------|-------------|---------|
-| **Button Enabled** | Enable/disable physical button | true |
-| **Second Press Stops** | Allow button to stop video | true |
-| **Button Cooldown** | Seconds between button presses | 60 |
-| **Disable Start Time** | When to disable button (optional) | null |
-| **Disable End Time** | When to re-enable button (optional) | null |
+| Setting                      | Description                         | Default |
+| ---------------------------- | ----------------------------------- | ------- |
+| **Button Enabled**     | Enable/disable physical button      | true    |
+| **Second Press Stops** | Allow button to stop video          | true    |
+| **Button Cooldown**    | Seconds between button presses      | 60      |
+| **Disable Start Time** | When to disable button (optional)   | null    |
+| **Disable End Time**   | When to re-enable button (optional) | null    |
 
 ```json
 {
@@ -100,8 +114,13 @@ Physical GPIO button configuration:
 
 Optional motion sensor integration:
 
-| Setting | Description | Default |
-|---------|-------------|---------|
+| Setting                         | Description                        | Default     |
+| ------------------------------- | ---------------------------------- | ----------- |
+| **Motion Sensor Enabled** | Enable motion sensor support       | false       |
+| **Motion Stop Enabled**   | Stop video on motion detected      | false       |
+| **Motion Stop Timeout**   | Time to wait before stopping video | 300 seconds |
+
+```json
 {
   "motion_sensor_enabled": false,
   "motion_stop_enabled": false,
@@ -113,11 +132,11 @@ Optional motion sensor integration:
 
 These settings are only configurable in the JSON file for security:
 
-| Setting | Description | Default |
-|---------|-------------|---------|
-| **Monitor GPIO** | GPIO pin for monitor control | null |
-| **Button Pin** | GPIO pin for physical button | 17 |
-| **Motion Sensor Pin** | GPIO pin for motion sensor | null |
+| Setting                     | Description                  | Default |
+| --------------------------- | ---------------------------- | ------- |
+| **Monitor GPIO**      | GPIO pin for monitor control | null    |
+| **Button Pin**        | GPIO pin for physical button | 17      |
+| **Motion Sensor Pin** | GPIO pin for motion sensor   | null    |
 
 ```json
 {
@@ -154,6 +173,7 @@ Track your pet's viewing patterns:
 ## Web Interface vs Config File
 
 ### ✅ Configurable via Web Interface
+
 - Playback duration and cooldown
 - Volume and night mode settings
 - Button enable/disable and scheduling
@@ -161,6 +181,7 @@ Track your pet's viewing patterns:
 - Play schedule management
 
 ### ❌ Config File Only
+
 - GPIO pin assignments (for security)
 - File paths and database locations
 - Advanced hardware settings
@@ -168,15 +189,19 @@ Track your pet's viewing patterns:
 ## Video Management
 
 ### Default Video Location
+
 Place videos in:
+
 ```
 /home/pi/videos/
 ```
 
 ### USB Support
+
 Plug in a USB stick - it will be auto-mounted to `/media/usb` and videos will be detected automatically.
 
 ### Supported Formats
+
 - MP4, AVI, MKV, MOV, WMV
 - Most common video codecs
 - Automatic duration detection with caching
@@ -194,11 +219,11 @@ PawVision automatically controls your HDMI monitor:
 
 ### REST API Endpoints
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/play` | POST | Start video playback |
-| `/api/stop` | POST | Stop video playback |
-| `/api/status` | GET | Get current status |
+| Endpoint        | Method | Description          |
+| --------------- | ------ | -------------------- |
+| `/api/play`   | POST   | Start video playback |
+| `/api/stop`   | POST   | Stop video playback  |
+| `/api/status` | GET    | Get current status   |
 
 ### Home Assistant Example
 
@@ -215,17 +240,20 @@ rest_command:
 ## Best Practices
 
 ### Hardware Setup
+
 - **GPIO Pins**: Choose pins that don't conflict with other devices
 - **Motion Sensor**: Place at pet's eye level for best detection
 - **Button Placement**: Mount where your pet can easily access
 
 ### Configuration Tips
+
 - **Cooldown Periods**: Set appropriate delays to prevent over-triggering
 - **Night Mode**: Align with your household's sleep schedule
 - **Motion Timeout**: Start with 5 minutes, adjust based on pet behavior
 - **Video Duration**: Start with 15-30 minutes, adjust based on attention span
 
 ### Maintenance
+
 - **Regular Updates**: Run the installer periodically for updates
 - **Video Rotation**: Add new videos regularly to keep pets engaged
 - **Statistics Review**: Check viewing patterns to optimize settings
@@ -236,23 +264,27 @@ rest_command:
 ### Common Issues
 
 **Button Not Responding**
+
 - Check GPIO pin assignment in config
 - Verify physical wiring
 - Check if button is disabled by schedule
 - Look for cooldown period messages
 
 **Motion Sensor Not Working**
+
 - Verify `motion_sensor_enabled` is true
 - Check GPIO pin wiring
 - Ensure motion sensor has proper power
 - Test placement and sensitivity
 
 **Web Interface Not Accessible**
+
 - Check if PawVision is running: `systemctl status pawvision`
 - Verify port 5001 is not blocked by firewall
 - Check network connectivity to Raspberry Pi
 
 **Videos Not Playing**
+
 - Verify video files are in `/home/pi/videos/`
 - Check video format compatibility
 - Look for errors in logs: `journalctl -u pawvision`
@@ -270,6 +302,7 @@ Common log messages and their meanings:
 ### Getting Help
 
 For additional support:
+
 - Check the [GitHub Issues](https://github.com/mkroemer/PawVision/issues)
 - Review the [Release Notes](releases.html) for recent changes
 - Join discussions in the repository
@@ -277,6 +310,7 @@ For additional support:
 ## Example Configurations
 
 ### Basic Setup
+
 ```json
 {
   "playback_duration_minutes": 15,
@@ -288,6 +322,7 @@ For additional support:
 ```
 
 ### Advanced Setup with Motion Detection
+
 ```json
 {
   "playbook_duration_minutes": 30,

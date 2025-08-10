@@ -2,6 +2,7 @@
 layout: pawvision-theme
 title: API Reference
 ---
+# API Reference
 
 RESTful API endpoints for controlling PawVision programmatically.
 

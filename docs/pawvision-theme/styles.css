@@ -1,3 +1,6 @@
+main h1:first-of-type {
+	display: none !important;
+}
 /* Custom PawVision theme CSS - copied from static/styles.css */
 /* PawVision Web Interface Styles */
 /* Human-friendly color scheme with warm orange and soft teal */
@@ -8,7 +11,13 @@ body {
 	padding: 20px;
 	margin: 0;
 	min-height: 100vh;
-	line-height: 1.7;
+	line-height: 1.8;
+	width: 100%;
+	border-collapse: collapse;
+	margin: 20px 0;
+	padding: 10px 8px;
+	text-align: left;
+	vertical-align: top;
 }
 
 @media (max-width: 768px) {
@@ -129,7 +138,10 @@ h1 {
 }
 
 .section:hover {
-	/* Removed hover effect */
+	background: rgba(255, 145, 77, 0.18);
+	color: #FF914D;
+	box-shadow: none;
+	transform: none;
 }
 
 .section h2 {
@@ -140,6 +152,7 @@ h1 {
 	font-weight: 500;
 	border-bottom: 2px solid #FF914D;
 	padding-bottom: 10px;
+	background: none;
 	transition: none;
 
 button {
@@ -148,7 +161,8 @@ button {
 	border: none;
 	border-radius: 8px;
 	background: linear-gradient(45deg, #FF914D, #FF7A2E);
-	/* Removed hover effect */
+	/* No transform on hover */
+	transform: none;
 	font-weight: 500;
 	transition: all 0.3s ease;
 	box-shadow: 0 4px 15px rgba(255, 145, 77, 0.3);
@@ -222,20 +236,28 @@ li {
 }
 
 pre, code {
-	background: #222;
-	color: #fff;
+	background: #FFE5D0;
+	color: #222;
 	border-radius: 8px;
-	padding: 12px;
+	padding: 16px;
 	font-family: 'Fira Mono', 'Consolas', 'Menlo', 'Monaco', monospace;
-	font-size: 0.95em;
+	font-size: 1em;
 	overflow-x: auto;
 	counter-reset: line;
-	line-height: 1.7;
+	line-height: 2.0;
+	width: 100%;
+	box-sizing: border-box;
+/* Hide Jekyll frontmatter YAML block if rendered */
+.highlight pre, .highlight code, .highlight {
+	display: none !important;
+}
 }
 pre code {
 	display: block;
 	white-space: pre;
 	position: relative;
+	background: transparent;
+	width: 100%;
 }
 pre code span {
 	display: block;
@@ -268,13 +290,13 @@ pre {
 }
 code {
 	padding: 2px 6px;
-	background: #222;
-	color: #fff;
+	background: #FFE5D0;
+	color: #222;
 	border-radius: 4px;
 }
 li:hover {
 	background: rgba(255, 255, 255, 0.95);
-	transform: translateX(5px);
+	transform: none;
 	border-color: rgba(255, 145, 77, 0.4);
 }
 
