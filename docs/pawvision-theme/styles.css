@@ -121,15 +121,14 @@ h1 {
 	padding: 25px;
 	margin-bottom: 25px;
 	border-radius: 15px;
-	box-shadow: 0 8px 32px rgba(255, 145, 77, 0.15);
+	box-shadow: 0 8px 32px rgba(255, 145, 77, 0.10);
 	backdrop-filter: blur(10px);
 	border: 1px solid rgba(255, 255, 255, 0.2);
-	transition: transform 0.2s ease, box-shadow 0.2s ease;
+	transition: none;
 }
 
 .section:hover {
-	transform: translateY(-2px);
-	box-shadow: 0 12px 40px rgba(255, 145, 77, 0.25);
+	/* Removed hover effect */
 }
 
 .section h2 {
@@ -140,7 +139,7 @@ h1 {
 	font-weight: 500;
 	border-bottom: 2px solid #FF914D;
 	padding-bottom: 10px;
-}
+	transition: none;
 
 button {
 	padding: 12px 20px;
@@ -148,9 +147,7 @@ button {
 	border: none;
 	border-radius: 8px;
 	background: linear-gradient(45deg, #FF914D, #FF7A2E);
-	color: white;
-	cursor: pointer;
-	font-size: 14px;
+	/* Removed hover effect */
 	font-weight: 500;
 	transition: all 0.3s ease;
 	box-shadow: 0 4px 15px rgba(255, 145, 77, 0.3);
@@ -208,22 +205,40 @@ input[type="checkbox"] {
 }
 
 ul {
-	list-style: none;
+	margin: 16px 0 16px 24px;
 	padding: 0;
 }
 
 li {
-	background: rgba(255, 255, 255, 0.8);
-	margin: 10px 0;
-	padding: 15px;
-	border-radius: 10px;
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	border: 1px solid rgba(255, 145, 77, 0.2);
-	transition: all 0.2s ease;
+	background: none;
+	margin: 8px 0;
+	padding: 0;
+	border-radius: 0;
+	border: none;
+	display: list-item;
+	color: #222;
+	font-weight: 400;
 }
 
+pre, code {
+	background: #222;
+	color: #fff;
+	border-radius: 8px;
+	padding: 12px;
+	font-family: 'Fira Mono', 'Consolas', 'Menlo', 'Monaco', monospace;
+	font-size: 0.95em;
+	overflow-x: auto;
+}
+pre {
+	margin: 16px 0;
+	white-space: pre-wrap;
+}
+code {
+	padding: 2px 6px;
+	background: #222;
+	color: #fff;
+	border-radius: 4px;
+}
 li:hover {
 	background: rgba(255, 255, 255, 0.95);
 	transform: translateX(5px);
