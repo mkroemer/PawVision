@@ -174,7 +174,6 @@ body {
 }
 
 .header-link:hover {
-  background: rgba(255, 145, 77, 0.2);
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
   text-decoration: none;
@@ -252,38 +251,17 @@ h1 {
   gap: var(--spacing-lg);
   justify-content: center;
   flex-wrap: wrap;
-}
-
-.menu ul {
-  display: flex;
-  gap: var(--spacing-lg);
-  justify-content: center;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  flex-wrap: wrap;
-}
-
-.menu li {
-  margin: 0;
+  align-items: center;
 }
 
 @media (max-width: 768px) {
   .menu {
     gap: var(--spacing-md);
   }
-  
-  .menu ul {
-    gap: var(--spacing-md);
-  }
 }
 
 @media (max-width: 480px) {
   .menu {
-    gap: var(--spacing-sm);
-  }
-  
-  .menu ul {
     gap: var(--spacing-sm);
   }
 }
@@ -566,10 +544,10 @@ code {
 }
 
 pre {
-  background: #f8f9fa;
-  color: var(--text-primary);
+  background: #f8f9fa !important;
+  color: var(--text-primary) !important;
   border-radius: var(--border-radius-md);
-  padding: var(--spacing-lg);
+  padding: var(--spacing-lg) !important;
   margin: var(--spacing-lg) 0;
   overflow-x: auto;
   line-height: 1.5;
@@ -577,12 +555,13 @@ pre {
   box-shadow: var(--shadow-sm);
   width: 100%;
   box-sizing: border-box;
+  display: block;
 }
 
 pre code {
-  background: transparent;
-  padding: 0;
-  color: inherit;
+  background: transparent !important;
+  padding: 0 !important;
+  color: inherit !important;
   border-radius: 0;
   font-weight: 400;
   display: block;
@@ -595,14 +574,55 @@ pre code {
   border-radius: var(--border-radius-md);
   overflow: hidden;
   width: 100%;
+  background: #f8f9fa !important;
 }
 
 .highlight pre {
-  margin: 0;
+  margin: 0 !important;
   border-radius: 0;
   border: none;
   width: 100%;
-  background: #f8f9fa;
+  background: #f8f9fa !important;
+}
+
+/* Ensure all code blocks have full background */
+.highlight .highlight,
+div[class*="language-"] {
+  background: #f8f9fa !important;
+  width: 100%;
+  display: block;
+}
+
+/* Rouge syntax highlighter specific */
+.highlight .c,
+.highlight .c1,
+.highlight .cm,
+.highlight .cp,
+.highlight .cs {
+  color: #6c757d;
+}
+
+.highlight .k,
+.highlight .kc,
+.highlight .kd,
+.highlight .kn,
+.highlight .kp,
+.highlight .kr,
+.highlight .kt {
+  color: #007bff;
+}
+
+.highlight .s,
+.highlight .s1,
+.highlight .s2,
+.highlight .sb,
+.highlight .sc,
+.highlight .sd,
+.highlight .se,
+.highlight .sh,
+.highlight .si,
+.highlight .sx {
+  color: #28a745;
 }
 
 /* Hide Jekyll frontmatter YAML blocks */
@@ -776,10 +796,6 @@ hr {
   border-bottom: 3px solid transparent;
   min-width: 0;
   position: relative;
-}
-
-.tab:hover {
-  background: rgba(255, 145, 77, 0.1);
 }
 
 .tab.active {
@@ -1280,12 +1296,13 @@ hr {
   }
   
   pre {
-    background: #2d2d2d;
+    background: #2d2d2d !important;
     border-color: #404040;
   }
   
+  .highlight,
   .highlight pre {
-    background: #2d2d2d;
+    background: #2d2d2d !important;
   }
   
   code {

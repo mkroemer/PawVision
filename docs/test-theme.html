@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PawVision Theme Test</title>
+    <link rel="stylesheet" href="pawvision-theme/styles.css">
+</head>
+<body>
+    <header class="header" role="banner">
+        <div class="header-content">
+            <div class="header-main">
+                <img src="pawvision.png" alt="PawVision Logo" class="logo" width="80" height="80">
+                <h1>PawVision Documentation</h1>
+            </div>
+            <div class="header-links">
+                <a href="https://github.com/mkroemer/PawVision" target="_blank" class="header-link">
+                    <span>GitHub</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <nav class="menu" role="navigation">
+        <a href="#" class="header-link">🏠 Home</a>
+        <a href="#" class="header-link">⚙️ Configuration</a>
+        <a href="#" class="header-link">🔗 API</a>
+        <a href="#" class="header-link">🔧 Hardware</a>
+        <a href="#" class="header-link">💻 Development</a>
+        <a href="#" class="header-link">🚀 Releases</a>
+    </nav>
+
+    <main class="section" role="main">
+        <h2>Test Code Block</h2>
+        <p>Here's a test code block to verify the full-width background:</p>
+        
+        <pre><code>#!/bin/bash
+# This is a test bash script
+echo "Hello PawVision!"
+for i in {1..5}; do
+    echo "Line $i"
+done</code></pre>
+
+        <div class="highlight">
+            <pre><code class="language-python">def hello_pawvision():
+    """A simple Python function"""
+    print("Hello from PawVision!")
+    
+    for i in range(5):
+        print(f"Python line {i}")
+        
+if __name__ == "__main__":
+    hello_pawvision()</code></pre>
+        </div>
+
+        <h3>Test Menu Navigation</h3>
+        <p>The menu above should display horizontally in one line, and hover effects should not change background colors to orange.</p>
+        
+        <h3>Test Inline Code</h3>
+        <p>This is an example of <code>inline code</code> which should have a light background.</p>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2025 🐾 Made with ❤️ for pets and their humans</p>
+        </div>
+    </footer>
+
+    <script src="pawvision-theme/pawvision.js" defer></script>
+</body>
+</html>
