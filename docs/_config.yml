@@ -4,7 +4,7 @@ title: "PawVision Documentation"
 description: "A Raspberry Pi-based Pet TV system with web interface"
 url: "https://mkroemer.github.io/PawVision"
 author: "mkroemer"
-theme: "beautiful-jekyll"
+remote_theme: daattali/beautiful-jekyll@master
 
 # Navigation structure
 header_pages:
