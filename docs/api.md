@@ -1,8 +1,6 @@
----
-layout: page
+layout: pawvision-theme
 title: API Reference
 permalink: /api/
----
 
 RESTful API endpoints for controlling PawVision programmatically.
 

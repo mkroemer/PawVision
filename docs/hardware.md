@@ -1,11 +1,9 @@
 ---
 title: Hardware Setup
 ---
-
-PawVision is designed to run on single board computers (SBCs) such as the Raspberry Pi. To enable physical interaction, you can connect a button and a motion sensor to your device.
+layout: pawvision-theme
 
 ## GPIO Configuration
-
 GPIO pin assignments for the button and motion sensor can be changed in the `pawvision_settings.json` configuration file. Update the following fields to match your wiring:
 
 - `button_pin`: GPIO pin number for the button

@@ -1,11 +1,9 @@
 layout: page
 title: Release Notes
 permalink: /releases/
-
-## Version 1.0.0 - August 2025
+layout: pawvision-theme
 ### 📋 Configuration Schema
 ### 🎯 Major Features
-**New Settings:**
 **Centralized Time Utilities**
 - Unified time parsing system
 - Eliminated duplicate code across modules

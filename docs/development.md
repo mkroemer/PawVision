@@ -4,11 +4,9 @@ title: Developer Guide
 permalink: /development/
 ---
 # General Development Information
-
-## Setting Up Your Development Environment
+layout: pawvision-theme
 
  - **Clone the repository**:
-	 ```bash
 	 git clone https://github.com/mkroemer/PawVision.git
 	 cd PawVision
 	 ```

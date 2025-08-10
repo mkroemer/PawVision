@@ -1,7 +1,14 @@
 ---
 title: PawVision Documentation
 description: A Raspberry Pi-based Pet TV system with web interface
-theme: minima
+theme: null
+layouts_dir: pawvision-theme
+defaults:
+  - scope:
+      path: ""
+      type: "pages"
+    values:
+      layout: pawvision-theme
 plugins:
   - jekyll-feed
   - jekyll-sitemap
