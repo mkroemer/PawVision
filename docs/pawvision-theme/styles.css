@@ -161,7 +161,8 @@ button {
 	border: none;
 	border-radius: 8px;
 	background: linear-gradient(45deg, #FF914D, #FF7A2E);
-	/* No transform on hover */
+	/* No hover effect in content area */
+	background: none;
 	transform: none;
 	font-weight: 500;
 	transition: all 0.3s ease;
@@ -295,9 +296,10 @@ code {
 	border-radius: 4px;
 }
 li:hover {
-	background: rgba(255, 255, 255, 0.95);
+	background: none;
 	transform: none;
 	border-color: rgba(255, 145, 77, 0.4);
+	background: none;
 }
 
 li span {

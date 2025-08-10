@@ -34,4 +34,3 @@ layout: pawvision-theme
 ---
 
 For full details and configuration examples, see the documentation and configuration guide.
-}
