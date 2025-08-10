@@ -1,5 +1,8 @@
+---
 layout: pawvision-theme
 title: 🐾 PawVision Documentation
+---
+
 <div style="text-align: center; margin-bottom: 2rem;">
   <img src="pawvision.png" alt="PawVision Logo" height="200"/>
 </div>

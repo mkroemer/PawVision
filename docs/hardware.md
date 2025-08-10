@@ -1,7 +1,7 @@
 ---
 title: Hardware Setup
----
 layout: pawvision-theme
+---
 
 ## GPIO Configuration
 GPIO pin assignments for the button and motion sensor can be changed in the `pawvision_settings.json` configuration file. Update the following fields to match your wiring:

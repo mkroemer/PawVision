@@ -1,6 +1,7 @@
+---
 layout: pawvision-theme
 title: Configuration Guide
-permalink: /configuration/
+---
 
 Complete setup and configuration guide for your PawVision Pet TV system.
 

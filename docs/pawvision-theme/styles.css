@@ -8,6 +8,7 @@ body {
 	padding: 20px;
 	margin: 0;
 	min-height: 100vh;
+	line-height: 1.7;
 }
 
 @media (max-width: 768px) {
@@ -221,6 +222,38 @@ li {
 }
 
 pre, code {
+	background: #222;
+	color: #fff;
+	border-radius: 8px;
+	padding: 12px;
+	font-family: 'Fira Mono', 'Consolas', 'Menlo', 'Monaco', monospace;
+	font-size: 0.95em;
+	overflow-x: auto;
+	counter-reset: line;
+	line-height: 1.7;
+}
+pre code {
+	display: block;
+	white-space: pre;
+	position: relative;
+}
+pre code span {
+	display: block;
+	padding-left: 2.5em;
+	position: relative;
+}
+pre code span:before {
+	counter-increment: line;
+	content: counter(line);
+	position: absolute;
+	left: 0;
+	width: 2em;
+	text-align: right;
+	color: #888;
+	font-size: 0.85em;
+	padding-right: 0.5em;
+	user-select: none;
+}
 	background: #222;
 	color: #fff;
 	border-radius: 8px;
@@ -590,12 +623,14 @@ form.inline {
 	padding: 15px;
 	background: transparent;
 	text-align: center;
+	font-size: 0.8em;
 }
 
 .footer-content p {
 	margin: 4px 0;
 	color: #666;
 	font-size: 0.8em;
+	text-align: center;
 }
 
 .footer-content p:first-child {

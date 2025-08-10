@@ -1,10 +1,7 @@
 ---
-layout: page
-title: Developer Guide
-permalink: /development/
----
-# General Development Information
 layout: pawvision-theme
+title: Developer Guide
+---
 
  - **Clone the repository**:
 	 git clone https://github.com/mkroemer/PawVision.git
