@@ -1,7 +1,7 @@
 ---
 title: PawVision Documentation
 description: A Raspberry Pi-based Pet TV system with web interface
-theme: null
+# Use custom theme in pawvision-theme directory
 layouts_dir: pawvision-theme
 defaults:
   - scope:
@@ -17,32 +17,6 @@ plugins:
 markdown: kramdown
 highlighter: rouge
 
-# Navigation structure
-header_pages:
-  - index.md
-  - configuration.md
-  - api.md
-  - hardware.md
-  - development.md
-  - releases.md
-
-# GitHub repository info
-github_username: mkroemer
-repository: PawVision
-
-# Social links
-social_links:
-  github: mkroemer/PawVision
-
 # Build settings
-safe: true
+safe: false
 incremental: false
-
-# Exclude from processing
-exclude:
-  - Gemfile
-  - Gemfile.lock
-  - vendor/
-  - .bundle/
-  - .sass-cache/
-  - .jekyll-cache/

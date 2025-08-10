@@ -1,53 +1,398 @@
-// Custom PawVision theme JS - copied from static/pawvision.js
-// PawVision JavaScript Functions
+/*!
+ * PawVision Theme JavaScript
+ * Enhanced for better accessibility and modern practices
+ */
 
+// Wait for DOM to be fully loaded
+document.addEventListener('DOMContentLoaded', function() {
+    initializeTheme();
+});
+
+/**
+ * Initialize theme functionality
+ */
+function initializeTheme() {
+    setupSmoothScrolling();
+    setupTabNavigation();
+    setupAccessibilityFeatures();
+    setupFormValidation();
+    console.log('🐾 PawVision theme initialized successfully!');
+}
+
+/**
+ * Setup smooth scrolling for anchor links
+ */
+function setupSmoothScrolling() {
+    const links = document.querySelectorAll('a[href^="#"]');
+    links.forEach(link => {
+        link.addEventListener('click', function(e) {
+            const targetId = this.getAttribute('href').substring(1);
+            const targetElement = document.getElementById(targetId);
+            
+            if (targetElement) {
+                e.preventDefault();
+                targetElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+                // Update focus for accessibility
+                targetElement.focus();
+            }
+        });
+    });
+}
+
+/**
+ * Setup tab navigation if tabs exist
+ */
+function setupTabNavigation() {
+    const tabs = document.querySelectorAll('.tab');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    if (tabs.length === 0) return;
+    
+    tabs.forEach((tab, index) => {
+        // Add keyboard support
+        tab.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.click();
+            }
+            
+            // Arrow key navigation
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                e.preventDefault();
+                const currentIndex = Array.from(tabs).indexOf(this);
+                let nextIndex;
+                
+                if (e.key === 'ArrowLeft') {
+                    nextIndex = currentIndex === 0 ? tabs.length - 1 : currentIndex - 1;
+                } else {
+                    nextIndex = currentIndex === tabs.length - 1 ? 0 : currentIndex + 1;
+                }
+                
+                tabs[nextIndex].focus();
+                tabs[nextIndex].click();
+            }
+        });
+        
+        // Click handler
+        tab.addEventListener('click', function() {
+            activateTab(index);
+        });
+        
+        // Add proper ARIA attributes
+        tab.setAttribute('role', 'tab');
+        tab.setAttribute('tabindex', index === 0 ? '0' : '-1');
+        tab.setAttribute('aria-selected', index === 0 ? 'true' : 'false');
+        tab.setAttribute('aria-controls', `tab-content-${index}`);
+        tab.id = `tab-${index}`;
+    });
+    
+    // Setup tab content ARIA attributes
+    tabContents.forEach((content, index) => {
+        content.setAttribute('role', 'tabpanel');
+        content.setAttribute('aria-labelledby', `tab-${index}`);
+        content.id = `tab-content-${index}`;
+        content.setAttribute('tabindex', '0');
+    });
+    
+    // Add tab container role
+    const tabContainer = document.querySelector('.tabs');
+    if (tabContainer) {
+        tabContainer.setAttribute('role', 'tablist');
+    }
+}
+
+/**
+ * Activate a specific tab
+ */
+function activateTab(activeIndex) {
+    const tabs = document.querySelectorAll('.tab');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    tabs.forEach((tab, index) => {
+        const isActive = index === activeIndex;
+        tab.classList.toggle('active', isActive);
+        tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        tab.setAttribute('tabindex', isActive ? '0' : '-1');
+    });
+    
+    tabContents.forEach((content, index) => {
+        content.classList.toggle('active', index === activeIndex);
+    });
+}
+
+/**
+ * Setup accessibility features
+ */
+function setupAccessibilityFeatures() {
+    // Add skip link if not present
+    addSkipLink();
+    
+    // Enhance form labels
+    enhanceFormLabels();
+    
+    // Add ARIA landmarks
+    addAriaLandmarks();
+    
+    // Setup focus management
+    setupFocusManagement();
+}
+
+/**
+ * Add skip link for keyboard navigation
+ */
+function addSkipLink() {
+    if (document.querySelector('.skip-link')) return;
+    
+    const skipLink = document.createElement('a');
+    skipLink.href = '#main-content';
+    skipLink.className = 'skip-link';
+    skipLink.textContent = 'Skip to main content';
+    skipLink.style.cssText = `
+        position: absolute;
+        top: -40px;
+        left: 6px;
+        background: var(--primary-color);
+        color: white;
+        padding: 8px;
+        text-decoration: none;
+        border-radius: 4px;
+        z-index: 1000;
+        transition: top 0.3s;
+    `;
+    
+    skipLink.addEventListener('focus', function() {
+        this.style.top = '6px';
+    });
+    
+    skipLink.addEventListener('blur', function() {
+        this.style.top = '-40px';
+    });
+    
+    document.body.insertBefore(skipLink, document.body.firstChild);
+}
+
+/**
+ * Enhance form labels for better accessibility
+ */
+function enhanceFormLabels() {
+    const inputs = document.querySelectorAll('input, select, textarea');
+    inputs.forEach(input => {
+        if (!input.id && input.name) {
+            input.id = input.name + '-' + Math.random().toString(36).substr(2, 9);
+        }
+        
+        // Associate labels with inputs
+        const label = document.querySelector(`label[for="${input.id}"]`);
+        if (!label) {
+            const nearbyLabel = input.previousElementSibling;
+            if (nearbyLabel && nearbyLabel.tagName === 'LABEL') {
+                nearbyLabel.setAttribute('for', input.id);
+            }
+        }
+    });
+}
+
+/**
+ * Add ARIA landmarks where missing
+ */
+function addAriaLandmarks() {
+    // Ensure main content has proper landmark
+    const main = document.querySelector('main');
+    if (main && !main.hasAttribute('role')) {
+        main.setAttribute('role', 'main');
+    }
+    
+    // Add navigation landmarks
+    const nav = document.querySelector('nav');
+    if (nav && !nav.hasAttribute('role')) {
+        nav.setAttribute('role', 'navigation');
+    }
+}
+
+/**
+ * Setup focus management
+ */
+function setupFocusManagement() {
+    // Trap focus in modals if any exist
+    const modals = document.querySelectorAll('.modal, .dialog');
+    modals.forEach(modal => {
+        modal.addEventListener('keydown', trapFocus);
+    });
+    
+    // Ensure visible focus indicators
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Tab') {
+            document.body.classList.add('keyboard-navigation');
+        }
+    });
+    
+    document.addEventListener('mousedown', function() {
+        document.body.classList.remove('keyboard-navigation');
+    });
+}
+
+/**
+ * Trap focus within an element
+ */
+function trapFocus(e) {
+    if (e.key !== 'Tab') return;
+    
+    const focusableElements = this.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+    
+    if (e.shiftKey) {
+        if (document.activeElement === firstElement) {
+            lastElement.focus();
+            e.preventDefault();
+        }
+    } else {
+        if (document.activeElement === lastElement) {
+            firstElement.focus();
+            e.preventDefault();
+        }
+    }
+}
+
+/**
+ * Setup form validation
+ */
+function setupFormValidation() {
+    const forms = document.querySelectorAll('form');
+    forms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            if (!validateForm(this)) {
+                e.preventDefault();
+            }
+        });
+    });
+}
+
+/**
+ * Validate a form
+ */
+function validateForm(form) {
+    let isValid = true;
+    const requiredFields = form.querySelectorAll('[required]');
+    
+    requiredFields.forEach(field => {
+        if (!field.value.trim()) {
+            showFieldError(field, 'This field is required');
+            isValid = false;
+        } else {
+            clearFieldError(field);
+        }
+    });
+    
+    return isValid;
+}
+
+/**
+ * Show field error
+ */
+function showFieldError(field, message) {
+    clearFieldError(field);
+    
+    const errorElement = document.createElement('div');
+    errorElement.className = 'field-error';
+    errorElement.textContent = message;
+    errorElement.style.cssText = `
+        color: var(--error-color);
+        font-size: var(--font-size-sm);
+        margin-top: var(--spacing-xs);
+    `;
+    
+    field.parentNode.appendChild(errorElement);
+    field.setAttribute('aria-invalid', 'true');
+    field.setAttribute('aria-describedby', errorElement.id = 'error-' + field.id);
+}
+
+/**
+ * Clear field error
+ */
+function clearFieldError(field) {
+    const existingError = field.parentNode.querySelector('.field-error');
+    if (existingError) {
+        existingError.remove();
+    }
+    field.removeAttribute('aria-invalid');
+    field.removeAttribute('aria-describedby');
+}
+
+// Legacy functions for backwards compatibility
 function addScheduleItem() {
-	const scheduleList = document.getElementById('schedule-list');
-	const newItem = document.createElement('div');
-	newItem.className = 'schedule-item';
-	newItem.innerHTML = `
-		<input type="time" name="schedule_times" value="" style="width: auto; display: inline-block; margin-right: 10px;">
-		<button type="button" class="danger" onclick="removeScheduleItem(this)" style="padding: 6px 12px;">Remove</button>
-	`;
-	scheduleList.appendChild(newItem);
+    const scheduleList = document.getElementById('schedule-list');
+    if (!scheduleList) return;
+    
+    const newItem = document.createElement('div');
+    newItem.className = 'schedule-item';
+    newItem.innerHTML = `
+        <input type="time" name="schedule_times" value="" aria-label="Schedule time">
+        <button type="button" class="btn btn-danger" onclick="removeScheduleItem(this)" aria-label="Remove schedule item">Remove</button>
+    `;
+    scheduleList.appendChild(newItem);
 }
 
 function removeScheduleItem(button) {
-	button.parentElement.remove();
+    button.parentElement.remove();
 }
 
 function showStatus(message, isError = false) {
-	const statusDiv = document.getElementById('status-message');
-	statusDiv.textContent = message;
-	statusDiv.style.display = 'block';
-	statusDiv.style.backgroundColor = isError ? 'rgba(255, 107, 107, 0.2)' : 'rgba(62, 193, 185, 0.2)';
-	statusDiv.style.color = isError ? '#ee5a24' : '#2BA8A0';
-	statusDiv.style.border = `1px solid ${isError ? 'rgba(255, 107, 107, 0.4)' : 'rgba(62, 193, 185, 0.4)'}`;
+    let statusDiv = document.getElementById('status-message');
     
-	// Hide the message after 3 seconds
-	setTimeout(() => {
-		statusDiv.style.display = 'none';
-	}, 3000);
+    if (!statusDiv) {
+        statusDiv = document.createElement('div');
+        statusDiv.id = 'status-message';
+        statusDiv.className = 'status-message';
+        document.body.appendChild(statusDiv);
+    }
+    
+    statusDiv.textContent = message;
+    statusDiv.className = `status-message ${isError ? 'status-error' : 'status-success'}`;
+    statusDiv.style.display = 'block';
+    statusDiv.setAttribute('role', 'alert');
+    statusDiv.setAttribute('aria-live', 'polite');
+    
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+        statusDiv.style.display = 'none';
+    }, 5000);
 }
 
 function toggleButtonSettings() {
-	const buttonSettings = document.getElementById('button_settings');
-	const buttonEnabled = document.querySelector('input[name="button_enabled"]').checked;
-	const inputs = buttonSettings.querySelectorAll('input, button');
-	const labels = buttonSettings.querySelectorAll('label');
+    const buttonSettings = document.getElementById('button_settings');
+    const buttonEnabled = document.querySelector('input[name="button_enabled"]');
     
-	inputs.forEach(input => {
-		input.disabled = !buttonEnabled;
-	});
+    if (!buttonSettings || !buttonEnabled) return;
     
-	labels.forEach(label => {
-		if (!buttonEnabled) {
-			label.classList.add('disabled');
-		} else {
-			label.classList.remove('disabled');
-		}
-	});
+    const isEnabled = buttonEnabled.checked;
+    const inputs = buttonSettings.querySelectorAll('input, button, select');
+    const labels = buttonSettings.querySelectorAll('label');
+    
+    inputs.forEach(input => {
+        input.disabled = !isEnabled;
+        input.setAttribute('aria-disabled', !isEnabled);
+    });
+    
+    labels.forEach(label => {
+        label.classList.toggle('disabled', !isEnabled);
+    });
 }
+
+// Export functions for external use
+window.PawVisionTheme = {
+    addScheduleItem,
+    removeScheduleItem,
+    showStatus,
+    toggleButtonSettings,
+    activateTab
+};
 
 function toggleMotionSettings() {
 	const motionSettings = document.getElementById('motion_settings');
