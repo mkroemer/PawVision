@@ -1,9 +1,7 @@
 ---
 title: Release Notes
-permalink: /releases/
 layout: pawvision-theme
 ---
-
 # PawVision Release Notes
 
 ## Latest Highlights

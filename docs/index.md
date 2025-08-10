@@ -16,7 +16,7 @@ PawVision is a Raspberry Pi-based "Pet TV" system that plays random videos for y
 - **Night Mode**: Automatic volume control during sleeping hours
 - **Physical Controls**: GPIO button with configurable behavior
 - **Motion Detection**: Optional motion sensor integration
-- **Web Interface**: Modern, pet-friendly control panel
+- **Web Interface**: Modern, human-friendly control panel
 - **Scheduling**: Automated playback at set times
 - **Statistics**: Track viewing patterns and usage
 
