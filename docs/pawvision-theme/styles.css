@@ -574,7 +574,7 @@ pre code {
   border-radius: var(--border-radius-md);
   overflow: hidden;
   width: 100%;
-  background: rgba(255, 145, 77, 0.15) !important;
+  background: transparent !important;
 }
 
 .highlight pre {
@@ -585,12 +585,16 @@ pre code {
   background: rgba(255, 145, 77, 0.15) !important;
 }
 
-/* Ensure all code blocks have full background */
+/* Ensure all code blocks have single background */
 .highlight .highlight,
 div[class*="language-"] {
-  background: rgba(255, 145, 77, 0.15) !important;
+  background: transparent !important;
   width: 100%;
   display: block;
+}
+
+div[class*="language-"] pre {
+  background: rgba(255, 145, 77, 0.15) !important;
 }
 
 /* Rouge syntax highlighter specific */
@@ -1300,7 +1304,10 @@ hr {
     border-color: rgba(255, 145, 77, 0.4);
   }
   
-  .highlight,
+  .highlight {
+    background: transparent !important;
+  }
+  
   .highlight pre {
     background: rgba(255, 145, 77, 0.3) !important;
   }

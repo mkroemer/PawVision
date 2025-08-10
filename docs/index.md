@@ -1,8 +1,7 @@
 ---
 layout: pawvision-theme
-title: 🐾 PawVision Documentation
+title: PawVision Documentation
 ---
-
 # PawVision Documentation
 
 <div style="text-align: center; margin-bottom: 2rem;">
