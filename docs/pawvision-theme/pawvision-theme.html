@@ -62,14 +62,12 @@
     </header>
 
     <nav class="menu" role="navigation" aria-label="Main navigation">
-        <ul>
-            <li><a href="{{ 'index.html' | relative_url }}" class="header-link" {% if page.url == '/' or page.url == '/index.html' %}aria-current="page"{% endif %}>🏠 Home</a></li>
-            <li><a href="{{ 'configuration.html' | relative_url }}" class="header-link" {% if page.url contains 'configuration' %}aria-current="page"{% endif %}>⚙️ Configuration</a></li>
-            <li><a href="{{ 'api.html' | relative_url }}" class="header-link" {% if page.url contains 'api' %}aria-current="page"{% endif %}>🔗 API</a></li>
-            <li><a href="{{ 'hardware.html' | relative_url }}" class="header-link" {% if page.url contains 'hardware' %}aria-current="page"{% endif %}>🔧 Hardware</a></li>
-            <li><a href="{{ 'development.html' | relative_url }}" class="header-link" {% if page.url contains 'development' %}aria-current="page"{% endif %}>💻 Development</a></li>
-            <li><a href="{{ 'releases.html' | relative_url }}" class="header-link" {% if page.url contains 'releases' %}aria-current="page"{% endif %}>🚀 Releases</a></li>
-        </ul>
+        <a href="{{ 'index.html' | relative_url }}" class="header-link" {% if page.url == '/' or page.url == '/index.html' %}aria-current="page"{% endif %}>🏠 Home</a>
+        <a href="{{ 'configuration.html' | relative_url }}" class="header-link" {% if page.url contains 'configuration' %}aria-current="page"{% endif %}>⚙️ Configuration</a>
+        <a href="{{ 'api.html' | relative_url }}" class="header-link" {% if page.url contains 'api' %}aria-current="page"{% endif %}>🔗 API</a>
+        <a href="{{ 'hardware.html' | relative_url }}" class="header-link" {% if page.url contains 'hardware' %}aria-current="page"{% endif %}>🔧 Hardware</a>
+        <a href="{{ 'development.html' | relative_url }}" class="header-link" {% if page.url contains 'development' %}aria-current="page"{% endif %}>💻 Development</a>
+        <a href="{{ 'releases.html' | relative_url }}" class="header-link" {% if page.url contains 'releases' %}aria-current="page"{% endif %}>🚀 Releases</a>
     </nav>
 
     <main class="section" role="main" id="main-content">
