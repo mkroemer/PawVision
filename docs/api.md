@@ -4,8 +4,6 @@ title: API Reference
 permalink: /api/
 ---
 
-# PawVision API Reference
-
 RESTful API endpoints for controlling PawVision programmatically.
 
 ## Base URL

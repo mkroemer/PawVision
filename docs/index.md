@@ -1,12 +1,10 @@
 ---
 layout: home
-title: PawVision Documentation
+title: 🐾 PawVision Documentation
 ---
 <div style="text-align: center; margin-bottom: 2rem;">
   <img src="pawvision.png" alt="PawVision Logo" height="200"/>
 </div>
-
-# 🐾 PawVision
 
 PawVision is a Raspberry Pi-based "Pet TV" system that plays random videos for your pet on an HDMI monitor with a pet-friendly web interface.
 

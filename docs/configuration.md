@@ -4,8 +4,6 @@ title: Configuration Guide
 permalink: /configuration/
 ---
 
-# PawVision Configuration Guide
-
 Complete setup and configuration guide for your PawVision Pet TV system.
 
 ## Installation
@@ -34,26 +32,13 @@ This installer will:
 
 2. **Install dependencies**:
    ```bash
-   pip install -r requirements.txt
    ```
 
 3. **Run PawVision**:
-   ```bash
    python pawvision.py
    ```
 
 ## Web Interface
-
-After installation, access the web interface at:
-```
-http://<raspberry-pi-ip>:5001
-```
-
-The modern web interface features:
-- **Pet-friendly design** with warm orange and soft teal colors
-- **Easy controls** with prominent Play/Stop buttons
-- **Video management** for uploads and playlist control
-- **Interactive time picker** for scheduling
 - **Comprehensive settings** all in one place
 
 ## Configuration Options
@@ -118,11 +103,6 @@ Optional motion sensor integration:
 
 | Setting | Description | Default |
 |---------|-------------|---------|
-| **Motion Sensor Enabled** | Enable motion detection | false |
-| **Motion Stop Enabled** | Stop video when no motion | false |
-| **Motion Timeout** | Seconds before stopping | 300 |
-
-```json
 {
   "motion_sensor_enabled": false,
   "motion_stop_enabled": false,

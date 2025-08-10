@@ -2,8 +2,6 @@
 title: Hardware Setup
 ---
 
-# Hardware Setup
-
 PawVision is designed to run on single board computers (SBCs) such as the Raspberry Pi. To enable physical interaction, you can connect a button and a motion sensor to your device.
 
 ## GPIO Configuration
