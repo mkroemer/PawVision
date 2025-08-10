@@ -531,28 +531,28 @@ li::marker {
 
 /* Code and Pre-formatted Text */
 pre, code {
-  font-family: var(--font-family-mono);
-  font-size: var(--font-size-sm);
+  font-family: var(--font-family-mono), 'Monaco', 'Courier New', monospace;
+  font-size: var(--font-size-sm, 0.875rem);
 }
 
 code {
-  background: rgba(255, 145, 77, 0.15);
-  color: var(--text-primary);
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: var(--border-radius-sm);
+  background: rgba(255, 145, 77, 0.15) !important;
+  color: var(--text-primary, #2E2E2E);
+  padding: var(--spacing-xs, 0.25rem) var(--spacing-sm, 0.5rem);
+  border-radius: var(--border-radius-sm, 4px);
   font-weight: 500;
 }
 
 pre {
   background: rgba(255, 145, 77, 0.15) !important;
-  color: var(--text-primary) !important;
-  border-radius: var(--border-radius-md);
-  padding: var(--spacing-lg) !important;
-  margin: var(--spacing-lg) 0;
+  color: var(--text-primary, #2E2E2E) !important;
+  border-radius: var(--border-radius-md, 8px);
+  padding: var(--spacing-lg, 1.5rem) !important;
+  margin: var(--spacing-lg, 1.5rem) 0;
   overflow-x: auto;
   line-height: 1.5;
   border: 1px solid rgba(255, 145, 77, 0.3);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   width: 100%;
   box-sizing: border-box;
   display: block;
@@ -570,11 +570,13 @@ pre code {
 
 /* Syntax highlighting improvements */
 .highlight {
-  margin: var(--spacing-lg) 0;
-  border-radius: var(--border-radius-md);
+  margin: var(--spacing-lg, 1.5rem) 0;
+  border-radius: var(--border-radius-md, 8px);
   overflow: hidden;
   width: 100%;
-  background: transparent !important;
+  background: rgba(255, 145, 77, 0.15) !important;
+  border: 1px solid rgba(255, 145, 77, 0.3);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .highlight pre {
@@ -582,7 +584,8 @@ pre code {
   border-radius: 0;
   border: none;
   width: 100%;
-  background: rgba(255, 145, 77, 0.15) !important;
+  background: transparent !important;
+  padding: var(--spacing-lg, 1.5rem) !important;
 }
 
 /* Ensure all code blocks have single background */
@@ -595,6 +598,9 @@ div[class*="language-"] {
 
 div[class*="language-"] pre {
   background: rgba(255, 145, 77, 0.15) !important;
+  border: 1px solid rgba(255, 145, 77, 0.3);
+  border-radius: var(--border-radius-md, 8px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Rouge syntax highlighter specific */

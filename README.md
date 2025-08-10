@@ -18,9 +18,12 @@ Then open `http://<pi-ip>:5001` in your browser.
 
 Complete documentation is available at: **[PawVision Docs](https://mkroemer.github.io/PawVision/)**
 
-- [📋 Configuration Guide](https://mkroemer.github.io/PawVision/configuration/) - Complete setup and configuration
-- [🔌 API Reference](https://mkroemer.github.io/PawVision/api/) - REST API documentation
-- [📝 Release Notes](https://mkroemer.github.io/PawVision/releases/) - Latest updates and changes
+- [🏠 Home](https://mkroemer.github.io/PawVision/) - Overview and quick start
+- [⚙️ Configuration Guide](https://mkroemer.github.io/PawVision/configuration.html) - Complete setup and configuration
+- [� API Reference](https://mkroemer.github.io/PawVision/api.html) - REST API documentation
+- [🔧 Hardware Setup](https://mkroemer.github.io/PawVision/hardware.html) - Hardware connection and configuration
+- [� Development](https://mkroemer.github.io/PawVision/development.html) - Development and testing guide
+- [🚀 Release Notes](https://mkroemer.github.io/PawVision/releases.html) - Latest updates and changes
 
 ## ✨ Key Features
 

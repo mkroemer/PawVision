@@ -44,3 +44,11 @@ PawVision is a Raspberry Pi-based "Pet TV" system that plays random videos for y
 ## Support
 
 For issues, feature requests, or contributions, visit our [GitHub repository](https://github.com/mkroemer/PawVision).
+
+## Support PawVision 💖
+
+If you find PawVision useful and would like to support its development, you can:
+
+- ⭐ Star this project on [GitHub](https://github.com/mkroemer/PawVision)
+- 🐛 Report issues or suggest improvements
+- ☕ Support me on [Ko-fi](https://ko-fi.com/S6S41AWBB8)
