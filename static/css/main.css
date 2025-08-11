@@ -1,0 +1,25 @@
+/* PawVision Main Stylesheet */
+/* Modular CSS Architecture */
+
+/* Base styles and CSS variables */
+@import url('./base.css');
+
+/* Layout components (header, sections, tabs, footer) */
+@import url('./layout.css');
+
+/* Form elements and styling */
+@import url('./forms.css');
+
+/* Button styles and variants */
+@import url('./buttons.css');
+
+/* Modal system (general, progress, delete) */
+@import url('./modals.css');
+
+/* UI components (video items, statistics, charts) */
+@import url('./components.css');
+
+/* Page-specific styles */
+@import url('./control.css');      /* Control center styles */
+@import url('./statistics.css');   /* Statistics dashboard styles */
+@import url('./config.css');       /* Configuration page styles */

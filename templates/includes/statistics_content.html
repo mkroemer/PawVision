@@ -1,0 +1,67 @@
+<h2>📊 Usage Statistics</h2>
+
+<div class="filter">
+    <button class="active" onclick="Statistics.filterTime('24h')">Last 24 Hours</button>
+    <button onclick="Statistics.filterTime('7d')">Last 7 Days</button>
+    <button onclick="Statistics.filterTime('30d')">Last 30 Days</button>
+    <button onclick="Statistics.filterTime('all')">All Time</button>
+</div>
+
+<div class="stats-dashboard">
+    <div class="stats-grid">
+        <div class="stat-card">
+            <span class="stat-icon">▶️</span>
+            <div class="stat-value" id="total-plays">{{ stats.total_plays or 0 }}</div>
+            <div class="stat-label">Total Plays</div>
+            {% if stats.plays_trend %}
+            <div class="stat-trend {{ 'trend-up' if stats.plays_trend > 0 else 'trend-down' if stats.plays_trend < 0 else 'trend-neutral' }}">
+                {{ '+' if stats.plays_trend > 0 else '' }}{{ stats.plays_trend }}%
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="stat-card">
+            <span class="stat-icon">⏱️</span>
+            <div class="stat-value" id="total-duration">{{ stats.total_watch_time_str or "0m" }}</div>
+            <div class="stat-label">Total Watch Time</div>
+            {% if stats.duration_trend %}
+            <div class="stat-trend {{ 'trend-up' if stats.duration_trend > 0 else 'trend-down' if stats.duration_trend < 0 else 'trend-neutral' }}">
+                {{ '+' if stats.duration_trend > 0 else '' }}{{ stats.duration_trend }}%
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="stat-card">
+            <span class="stat-icon">📅</span>
+            <div class="stat-value" id="avg-daily">{{ stats.avg_daily_plays or 0 }}</div>
+            <div class="stat-label">Average Daily Plays</div>
+        </div>
+        
+        {% if stats.motion_sensor_enabled %}
+        <div class="stat-card">
+            <span class="stat-icon">�</span>
+            <div class="stat-value" id="avg-watch-time">{{ stats.avg_watch_time_str or "0m" }}</div>
+            <div class="stat-label">Average Watch Time</div>
+            <div style="font-size: 0.8rem; margin-top: 0.5rem; color: var(--text-muted);">
+                Motion Sensor Events
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="charts-section">
+    <div class="chart-container">
+        <div class="chart-header">
+            <h3 class="chart-title">📈 Plays Over Time</h3>
+            <div class="date-selector">
+                <input type="date" id="plays-chart-date" class="date-input" 
+                       value="" onchange="Statistics.updatePlaysChart(this.value)">
+                <button class="btn-secondary btn-sm" onclick="Statistics.resetPlaysChart()">Today</button>
+            </div>
+        </div>
+        <div id="plays-chart" class="chart-placeholder">
+            Chart will be rendered here
+        </div>
+    </div>
+</div>

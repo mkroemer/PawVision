@@ -1,0 +1,61 @@
+
+/* Configuration Page Specific Styles */
+
+/* Settings cards matching Jekyll theme design */
+.settings-card {
+    background: var(--background-secondary, #ffffff);
+    border: 1px solid var(--border-color, #e1e5e9);
+    border-radius: var(--border-radius-lg, 12px);
+    padding: var(--spacing-xl, 2rem);
+    margin-bottom: var(--spacing-xl, 2rem);
+    box-shadow: var(--shadow-sm, 0 2px 4px rgba(0, 0, 0, 0.1));
+    transition: var(--transition-normal, 0.3s ease);
+}
+
+.settings-card:hover {
+    box-shadow: var(--shadow-md, 0 4px 12px rgba(255, 145, 77, 0.15));
+    border-color: var(--border-primary, rgba(255, 145, 77, 0.2));
+}
+
+.settings-card h3 {
+    color: var(--text-primary, #2E2E2E);
+    margin: 0 0 var(--spacing-lg, 1.5rem) 0;
+    font-size: var(--font-size-xl, 1.25rem);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm, 0.5rem);
+}
+
+.card-description {
+    color: var(--text-secondary, #666666);
+    font-size: var(--font-size-sm, 0.875rem);
+    margin: 0 0 var(--spacing-lg, 1.5rem) 0;
+    line-height: 1.5;
+}
+
+/* Status message */
+#status-message {
+    border-radius: var(--border-radius-md, 8px);
+    font-size: var(--font-size-sm, 0.875rem);
+}
+
+#status-message.success {
+    background: var(--success-color, #28a745);
+    color: white;
+}
+
+#status-message.error {
+    background: var(--error-color, #dc3545);
+    color: white;
+}
+
+/* Configuration page specific responsive design */
+@media (max-width: 768px) {
+    .settings-card {
+        padding: var(--spacing-lg, 1.5rem);
+    }
+}
+
+@media (max-width: 480px) {
+}

@@ -132,7 +132,14 @@ class VideoPlayer:
         
         # Initialize video library manager
         db_path = getattr(config, 'database_path', 'pawvision.db')
-        self.library_manager = VideoLibraryManager(db_path)
+        youtube_cache_dir = getattr(config, 'youtube_cache_dir', 'youtube_cache')
+        youtube_preferred_quality = getattr(config, 'youtube_preferred_quality', '720p')
+        self.library_manager = VideoLibraryManager(
+            db_path=db_path,
+            video_directories=video_dirs,
+            youtube_cache_dir=youtube_cache_dir,
+            youtube_preferred_quality=youtube_preferred_quality
+        )
         self.monitor_relay = None
         self.timeout_thread = None
         self.logger = logging.getLogger(__name__)
@@ -177,7 +184,7 @@ class VideoPlayer:
                 self.current_process.terminate()
                 try:
                     self.current_process.wait(timeout=5)
-                except Exception:
+                except (subprocess.TimeoutExpired, OSError):
                     pass
     
     def sync_video_library(self):
@@ -189,6 +196,42 @@ class VideoPlayer:
         if added > 0 or updated > 0 or removed > 0:
             self.logger.info("Video library synced: %d added, %d updated, %d removed", 
                            added, updated, removed)
+    
+    def _get_playback_path(self, video_entry: VideoEntry) -> Optional[str]:
+        """Get the actual path/URL to use for video playback.
+        
+        For YouTube videos, this handles:
+        - Using downloaded file if available
+        - Using cached stream URL if valid
+        - Refreshing stream URL if expired
+        - Falling back to original YouTube URL
+        """
+        if not video_entry.is_youtube:
+            # For local files, just return the path if it exists
+            if os.path.exists(video_entry.path):
+                return video_entry.path
+            else:
+                self.logger.error("Local video file not found: %s", video_entry.path)
+                return None
+        
+        # Handle YouTube videos
+        playback_path = video_entry.get_playback_path()
+        
+        # If we got a YouTube URL back, we need to refresh the stream URL
+        if playback_path and playback_path.startswith(('https://www.youtube.com', 'https://youtu.be')):
+            self.logger.info("Refreshing stream URL for YouTube video: %s", 
+                           video_entry.get_display_title())
+            
+            if self.library_manager.youtube_manager.refresh_stream_url(video_entry):
+                # Update the database with new stream URL
+                self.library_manager.add_or_update_video(video_entry)
+                playback_path = video_entry.stream_url
+            else:
+                self.logger.error("Failed to refresh stream URL for: %s", 
+                                video_entry.get_display_title())
+                return None
+        
+        return playback_path
     
     def get_all_video_files(self) -> List[str]:
         """Get list of all video files in configured directories (filesystem scan)."""
@@ -409,14 +452,20 @@ class VideoPlayer:
         
         # Select random video entry
         video_entry = random.choice(playable_videos)
-        video_path = video_entry.path
+        
+        # Get the actual playback path (handles YouTube URLs, local files, etc.)
+        playback_path = self._get_playback_path(video_entry)
+        if not playback_path:
+            self.logger.error("Could not get playback path for: %s", video_entry.get_display_title())
+            return False
+        
         self.logger.info("Selected video: %s (title: %s)", 
-                        os.path.basename(video_path), video_entry.get_display_title())
+                        video_entry.get_display_title(), video_entry.get_display_title())
         
         # Get effective duration considering custom start/end times
         effective_duration = video_entry.get_effective_duration()
         if effective_duration is None or effective_duration <= 0:
-            self.logger.error("Invalid effective duration for %s", video_path)
+            self.logger.error("Invalid effective duration for %s", video_entry.get_display_title())
             return False
         
         # Calculate playback parameters using custom start/end times
@@ -439,7 +488,7 @@ class VideoPlayer:
             actual_play_duration = timeout_sec
         
         self.logger.info("Playing %s from %.1fs for %.1fs (custom range: %.1f-%.1f)", 
-                        os.path.basename(video_path), start_sec, actual_play_duration,
+                        video_entry.get_display_title(), start_sec, actual_play_duration,
                         custom_start, custom_end)
         
         # Prepare volume setting
@@ -455,19 +504,19 @@ class VideoPlayer:
         # Start video playback
         try:
             with self.process_lock:
-                self.current_video = video_path  # Track current video
+                self.current_video = video_entry.path  # Track current video (for statistics)
                 self.video_start_time = datetime.now()  # Track start time
                 self.current_process = subprocess.Popen([
                     "mpv",
                     f"--start={start_sec}",
                     volume_arg,
                     "--really-quiet",  # Reduce mpv output
-                    video_path
+                    playback_path
                 ])
             
             # Record statistics
             if self.statistics_manager:
-                self.statistics_manager.record_video_play(video_path, trigger)
+                self.statistics_manager.record_video_play(video_entry.path, trigger)
             
             # Start timeout thread
             self.timeout_thread = threading.Thread(
@@ -522,7 +571,35 @@ class VideoPlayer:
         
         for entry in video_entries:
             try:
-                if os.path.exists(entry.path):
+                # Handle both local files and YouTube videos
+                if entry.is_youtube:
+                    # YouTube video
+                    info = {
+                        'path': entry.path,
+                        'filename': entry.youtube_id or "YouTube Video",
+                        'title': entry.title,
+                        'display_title': entry.get_display_title(),
+                        'size': entry.size or 0,
+                        'size_mb': round((entry.size or 0) / (1024 * 1024), 1) if entry.size else 0,
+                        'modified': entry.updated_at or entry.created_at or "",
+                        'duration': entry.duration,
+                        'duration_str': self._format_duration(entry.duration) if entry.duration else "Unknown",
+                        'custom_start_time': entry.custom_start_time,
+                        'custom_end_time': entry.custom_end_time,
+                        'effective_duration': entry.get_effective_duration(),
+                        'effective_duration_str': self._format_duration(entry.get_effective_duration()) if entry.get_effective_duration() else "Unknown",
+                        # YouTube-specific fields
+                        'is_youtube': True,
+                        'youtube_id': entry.youtube_id,
+                        'youtube_url': entry.youtube_url,
+                        'quality': entry.quality,
+                        'download_path': entry.download_path,
+                        'stream_valid': entry.is_stream_valid()
+                    }
+                    video_info.append(info)
+                    
+                elif os.path.exists(entry.path):
+                    # Local file
                     stat = os.stat(entry.path)
                     
                     info = {
@@ -538,7 +615,14 @@ class VideoPlayer:
                         'custom_start_time': entry.custom_start_time,
                         'custom_end_time': entry.custom_end_time,
                         'effective_duration': entry.get_effective_duration(),
-                        'effective_duration_str': self._format_duration(entry.get_effective_duration()) if entry.get_effective_duration() else "Unknown"
+                        'effective_duration_str': self._format_duration(entry.get_effective_duration()) if entry.get_effective_duration() else "Unknown",
+                        # YouTube-specific fields (False for local files)
+                        'is_youtube': False,
+                        'youtube_id': None,
+                        'youtube_url': None,
+                        'quality': None,
+                        'download_path': None,
+                        'stream_valid': False
                     }
                     video_info.append(info)
                 

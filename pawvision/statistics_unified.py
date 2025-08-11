@@ -2,8 +2,9 @@
 
 import logging
 import os
+import sqlite3
 from datetime import datetime
-from typing import Dict
+from typing import Dict, List
 from threading import Lock
 from .database import PawVisionDatabase
 
@@ -37,7 +38,6 @@ class StatisticsManager:
         
         try:
             # Get the last button press event from the events table
-            import sqlite3
             with sqlite3.connect(self.db.db_path) as conn:
                 result = conn.execute(
                     "SELECT timestamp FROM events WHERE event_type = 'button_press' ORDER BY timestamp DESC LIMIT 1"
@@ -338,7 +338,6 @@ class StatisticsManager:
             return True
         
         try:
-            import sqlite3
             with sqlite3.connect(self.db.db_path) as conn:
                 # Clear events table
                 conn.execute("DELETE FROM events")
@@ -373,3 +372,65 @@ class StatisticsManager:
         except (ValueError, TypeError) as e:
             self.logger.error("Error getting button presses for date %s: %s", date, e)
             return 0
+    
+    def get_average_watch_time(self) -> float:
+        """Get average watch time for motion sensor events (button presses)."""
+        if not self.enabled:
+            return 0.0
+        
+        try:
+            with sqlite3.connect(self.db.db_path) as conn:
+                result = conn.execute("""
+                    SELECT AVG(CAST(json_extract(details, '$.duration') AS REAL)) as avg_duration
+                    FROM events 
+                    WHERE event_type = 'button_press' 
+                    AND json_extract(details, '$.duration') IS NOT NULL
+                    AND json_extract(details, '$.duration') > 0
+                """).fetchone()
+                
+                if result and result[0] is not None:
+                    return float(result[0])
+                return 0.0
+                
+        except (OSError, ValueError, TypeError) as e:
+            self.logger.error("Error getting average watch time: %s", e)
+            return 0.0
+    
+    def get_hourly_data(self, date_str: str = None) -> List[Dict]:
+        """Get hourly statistics for a specific date."""
+        if not self.enabled:
+            return []
+        
+        if date_str is None:
+            date_str = datetime.now().strftime('%Y-%m-%d')
+        
+        try:
+            with sqlite3.connect(self.db.db_path) as conn:
+                # Get hourly button press counts
+                # Convert UTC timestamps to local time for proper hourly grouping
+                result = conn.execute("""
+                    SELECT 
+                        CAST(strftime('%H', timestamp, 'localtime') AS INTEGER) as hour,
+                        COUNT(*) as plays
+                    FROM events 
+                    WHERE event_type = 'button_press' 
+                    AND date(timestamp, 'localtime') = ?
+                    GROUP BY hour
+                    ORDER BY hour
+                """, (date_str,)).fetchall()
+                
+                # Create array with all 24 hours
+                hourly_data = []
+                hour_counts = {row[0]: row[1] for row in result}
+                
+                for hour in range(24):
+                    hourly_data.append({
+                        'hour': hour,
+                        'plays': hour_counts.get(hour, 0)
+                    })
+                
+                return hourly_data
+                
+        except (OSError, ValueError, TypeError) as e:
+            self.logger.error("Error getting hourly data for date %s: %s", date_str, e)
+            return []

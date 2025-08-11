@@ -22,6 +22,14 @@ class VideoEntry:
     modified_time: Optional[float] = None  # file modification timestamp
     created_at: Optional[str] = None  # when entry was created
     updated_at: Optional[str] = None  # when entry was last updated
+    # YouTube-specific fields
+    is_youtube: bool = False  # whether this is a YouTube video
+    youtube_id: Optional[str] = None  # YouTube video ID
+    youtube_url: Optional[str] = None  # original YouTube URL
+    stream_url: Optional[str] = None  # direct stream URL (expires)
+    stream_expires: Optional[str] = None  # when stream URL expires
+    download_path: Optional[str] = None  # path to downloaded file if cached
+    quality: Optional[str] = None  # video quality preference
     
     def __post_init__(self):
         """Initialize timestamps if not provided."""
@@ -48,7 +56,34 @@ class VideoEntry:
         """Get the title to display (custom title or filename)."""
         if self.title:
             return self.title
+        if self.is_youtube:
+            # For YouTube videos, use the video ID as fallback
+            return f"YouTube Video {self.youtube_id}" if self.youtube_id else "YouTube Video"
         return os.path.basename(self.path)
+    
+    def is_stream_valid(self) -> bool:
+        """Check if the stream URL is still valid (not expired)."""
+        if not self.stream_url or not self.stream_expires:
+            return False
+        try:
+            expires = datetime.fromisoformat(self.stream_expires)
+            return datetime.now() < expires
+        except (ValueError, TypeError):
+            return False
+    
+    def get_playback_path(self) -> str:
+        """Get the path/URL to use for playback."""
+        if self.is_youtube:
+            # Prefer downloaded file if available
+            if self.download_path and os.path.exists(self.download_path):
+                return self.download_path
+            # Use stream URL if valid
+            elif self.is_stream_valid():
+                return self.stream_url
+            # Fall back to YouTube URL (will need fresh stream URL)
+            else:
+                return self.youtube_url or self.path
+        return self.path
 
 
 class PawVisionDatabase:
@@ -63,8 +98,10 @@ class PawVisionDatabase:
     def _init_database(self):
         """Initialize the SQLite database with all required tables."""
         try:
-            # Ensure directory exists
-            os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
+            # Ensure directory exists (only if not current directory)
+            db_dir = os.path.dirname(self.db_path)
+            if db_dir:  # Only create directory if path contains a directory
+                os.makedirs(db_dir, exist_ok=True)
             
             with sqlite3.connect(self.db_path) as conn:
                 # Video library table
@@ -78,7 +115,14 @@ class PawVisionDatabase:
                         size INTEGER,
                         modified_time REAL,
                         created_at TEXT,
-                        updated_at TEXT
+                        updated_at TEXT,
+                        is_youtube BOOLEAN NOT NULL DEFAULT 0,
+                        youtube_id TEXT,
+                        youtube_url TEXT,
+                        stream_url TEXT,
+                        stream_expires TEXT,
+                        download_path TEXT,
+                        quality TEXT
                     )
                 """)
                 
@@ -154,7 +198,14 @@ class PawVisionDatabase:
                                 duration = ?,
                                 size = ?,
                                 modified_time = ?,
-                                updated_at = ?
+                                updated_at = ?,
+                                is_youtube = ?,
+                                youtube_id = ?,
+                                youtube_url = ?,
+                                stream_url = ?,
+                                stream_expires = ?,
+                                download_path = ?,
+                                quality = ?
                             WHERE path = ?
                         """, (
                             video_entry.title,
@@ -164,6 +215,13 @@ class PawVisionDatabase:
                             video_entry.size,
                             video_entry.modified_time,
                             video_entry.updated_at,
+                            video_entry.is_youtube,
+                            video_entry.youtube_id,
+                            video_entry.youtube_url,
+                            video_entry.stream_url,
+                            video_entry.stream_expires,
+                            video_entry.download_path,
+                            video_entry.quality,
                             video_entry.path
                         ))
                         self.logger.debug("Updated video entry: %s", video_entry.path)
@@ -172,8 +230,10 @@ class PawVisionDatabase:
                         conn.execute("""
                             INSERT INTO video_library (
                                 path, title, custom_start_time, custom_end_time,
-                                duration, size, modified_time, created_at, updated_at
-                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                duration, size, modified_time, created_at, updated_at,
+                                is_youtube, youtube_id, youtube_url, stream_url,
+                                stream_expires, download_path, quality
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         """, (
                             video_entry.path,
                             video_entry.title,
@@ -183,7 +243,14 @@ class PawVisionDatabase:
                             video_entry.size,
                             video_entry.modified_time,
                             video_entry.created_at,
-                            video_entry.updated_at
+                            video_entry.updated_at,
+                            video_entry.is_youtube,
+                            video_entry.youtube_id,
+                            video_entry.youtube_url,
+                            video_entry.stream_url,
+                            video_entry.stream_expires,
+                            video_entry.download_path,
+                            video_entry.quality
                         ))
                         self.logger.debug("Added new video entry: %s", video_entry.path)
                     
@@ -206,16 +273,25 @@ class PawVisionDatabase:
                     
                     row = cursor.fetchone()
                     if row:
+                        # Convert sqlite3.Row to dict for easier access
+                        row_dict = dict(row)
                         return VideoEntry(
-                            path=row['path'],
-                            title=row['title'],
-                            custom_start_time=row['custom_start_time'],
-                            custom_end_time=row['custom_end_time'],
-                            duration=row['duration'],
-                            size=row['size'],
-                            modified_time=row['modified_time'],
-                            created_at=row['created_at'],
-                            updated_at=row['updated_at']
+                            path=row_dict['path'],
+                            title=row_dict['title'],
+                            custom_start_time=row_dict['custom_start_time'],
+                            custom_end_time=row_dict['custom_end_time'],
+                            duration=row_dict['duration'],
+                            size=row_dict['size'],
+                            modified_time=row_dict['modified_time'],
+                            created_at=row_dict['created_at'],
+                            updated_at=row_dict['updated_at'],
+                            is_youtube=bool(row_dict.get('is_youtube', False)),
+                            youtube_id=row_dict.get('youtube_id'),
+                            youtube_url=row_dict.get('youtube_url'),
+                            stream_url=row_dict.get('stream_url'),
+                            stream_expires=row_dict.get('stream_expires'),
+                            download_path=row_dict.get('download_path'),
+                            quality=row_dict.get('quality')
                         )
                     return None
                     
@@ -235,16 +311,25 @@ class PawVisionDatabase:
                     
                     videos = []
                     for row in cursor.fetchall():
+                        # Convert sqlite3.Row to dict for easier access
+                        row_dict = dict(row)
                         videos.append(VideoEntry(
-                            path=row['path'],
-                            title=row['title'],
-                            custom_start_time=row['custom_start_time'],
-                            custom_end_time=row['custom_end_time'],
-                            duration=row['duration'],
-                            size=row['size'],
-                            modified_time=row['modified_time'],
-                            created_at=row['created_at'],
-                            updated_at=row['updated_at']
+                            path=row_dict['path'],
+                            title=row_dict['title'],
+                            custom_start_time=row_dict['custom_start_time'],
+                            custom_end_time=row_dict['custom_end_time'],
+                            duration=row_dict['duration'],
+                            size=row_dict['size'],
+                            modified_time=row_dict['modified_time'],
+                            created_at=row_dict['created_at'],
+                            updated_at=row_dict['updated_at'],
+                            is_youtube=bool(row_dict.get('is_youtube', False)),
+                            youtube_id=row_dict.get('youtube_id'),
+                            youtube_url=row_dict.get('youtube_url'),
+                            stream_url=row_dict.get('stream_url'),
+                            stream_expires=row_dict.get('stream_expires'),
+                            download_path=row_dict.get('download_path'),
+                            quality=row_dict.get('quality')
                         ))
                     
                     return videos

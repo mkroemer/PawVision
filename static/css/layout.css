@@ -1,0 +1,319 @@
+/* Layout Styles */
+
+.header {
+    text-align: center;
+    margin-bottom: 30px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 20px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    backdrop-filter: var(--backdrop-filter);
+}
+
+@media (max-width: 768px) {
+    .header {
+        margin-bottom: 10px;
+        padding: 10px;
+        border-radius: var(--border-radius-small);
+    }
+}
+
+@media (max-width: 480px) {
+    .header {
+        margin-bottom: 5px;
+        padding: 8px;
+        margin: 0 5px 5px 5px;
+    }
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.header-main {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex: 1;
+    justify-content: center;
+}
+
+.header-links {
+    display: flex;
+    gap: 10px;
+}
+
+.header-link {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--medium-gray);
+    text-decoration: none;
+    font-size: 0.9em;
+    padding: 8px 12px;
+    border-radius: var(--border-radius-small);
+    transition: all 0.3s ease;
+}
+
+.header-link svg {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.3s ease;
+}
+
+.header-link:hover {
+    background: var(--primary-light);
+    color: var(--primary);
+    transform: translateY(-1px);
+}
+
+.header-link:hover svg {
+    transform: scale(1.1);
+}
+
+/* Logo - single source of truth */
+.logo {
+    width: 80px;
+    height: auto;
+    flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+    .logo {
+        width: 40px;
+        height: 40px;
+        font-size: 1em;
+    }
+    
+    .header-content {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .header-main {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .header-links {
+        justify-content: center;
+    }
+}
+
+.section {
+    background: rgba(255, 255, 255, 0.95);
+    margin-bottom: 20px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    backdrop-filter: var(--backdrop-filter);
+}
+
+@media (max-width: 768px) {
+    .section {
+        margin-bottom: 10px;
+        border-radius: var(--border-radius-small);
+    }
+}
+
+@media (max-width: 480px) {
+    .section {
+        margin: 0 5px 10px 5px;
+        border-radius: var(--border-radius-small);
+    }
+}
+
+.section h2 {
+    color: var(--primary);
+    margin: 0 0 20px 0;
+    padding: 20px 25px 0 25px;
+    font-size: 1.5em;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+@media (max-width: 768px) {
+    .section h2 {
+        padding: 15px 15px 0 15px;
+        font-size: 1.3em;
+        margin-bottom: 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    .section h2 {
+        padding: 10px 10px 0 10px;
+        font-size: 1.2em;
+        margin-bottom: 10px;
+    }
+}
+
+/* Legacy tab styles removed - now using .menu navigation system */
+
+/* Navigation component styles */
+.menu {
+    max-width: var(--content-max-width, 1100px);
+    margin: 0 auto var(--spacing-md, 1rem) auto;
+    display: flex;
+    gap: var(--spacing-lg, 1.5rem);
+    justify-content: center;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: var(--spacing-sm, 0.5rem);
+    /* Removed card background styling */
+}
+
+.menu .header-link {
+    color: var(--primary);
+    text-decoration: none;
+    padding: var(--spacing-sm, 0.5rem) var(--spacing-lg, 1.5rem);
+    background: var(--primary-light);
+    border-radius: 25px;
+    font-size: var(--font-size-sm, 0.875rem);
+    font-weight: 500;
+    /* Removed transition animation */
+    border: 1px solid var(--primary-light);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs, 0.25rem);
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.menu .header-link:hover {
+    /* Removed transform and box-shadow animations */
+    text-decoration: none;
+}
+
+.menu .header-link:focus {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.menu .header-link[aria-current="page"],
+.menu .header-link.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+@media (max-width: 768px) {
+    .menu {
+        gap: var(--spacing-sm, 0.5rem);
+        padding: var(--spacing-xs, 0.25rem);
+        margin: 0 5px var(--spacing-md, 1rem) 5px;
+    }
+}
+
+@media (max-width: 480px) {
+    .menu {
+        gap: var(--spacing-sm, 0.5rem);
+        flex-direction: column;
+        margin: 0 5px var(--spacing-md, 1rem) 5px;
+        padding: var(--spacing-xs, 0.25rem);
+    }
+    
+    .menu .header-link {
+        padding: var(--spacing-xs, 0.25rem) var(--spacing-md, 1rem);
+        font-size: var(--font-size-xs, 0.75rem);
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+.tab-container {
+    position: relative;
+    min-height: 400px;
+    overflow: visible; /* Allow content to expand and page to scroll */
+    isolation: isolate; /* Create a new stacking context */
+}
+
+.tab-content {
+    opacity: 0;
+    visibility: hidden;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.98);
+    border-radius: var(--border-radius);
+    min-height: 400px;
+    backdrop-filter: var(--backdrop-filter);
+    /* Removed transition animation to prevent layout shifts */
+    display: none; /* Hide by default to prevent FOUC */
+    overflow: visible; /* Allow content to expand naturally */
+    z-index: 1; /* Ensure proper stacking */
+}
+
+/* Show only the initially active tab */
+.tab-content:first-child,
+.tab-content.active {
+    display: block;
+}
+
+/* Ensure inactive tabs are hidden */
+.tab-content:not(.active) {
+    display: none !important;
+}
+
+@media (max-width: 768px) {
+    .tab-container {
+        min-height: 300px;
+    }
+    
+    .tab-content {
+        padding: 0;
+        min-height: 300px;
+        border-radius: var(--border-radius-small);
+        margin: 0 5px;
+    }
+}
+
+@media (max-width: 480px) {
+    .tab-container {
+        min-height: 250px;
+    }
+    
+    .tab-content {
+        min-height: 250px;
+        margin: 0 5px;
+    }
+}
+
+.tab-content.active {
+    opacity: 1;
+    visibility: visible;
+    position: relative; /* Use relative positioning to maintain document flow */
+    display: block; /* Ensure active tab is always visible */
+    background: rgba(255, 255, 255, 1) !important;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    margin-top: 30px;
+    padding: 20px 0;
+    background: none;
+}
+
+.footer p {
+    margin: 0;
+    color: var(--medium-gray);
+    font-size: 0.9em;
+}
+
+.footer a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.footer a:hover {
+    text-decoration: underline;
+}

@@ -1,0 +1,141 @@
+/* PawVision Base Styles */
+
+:root {
+    --primary: #ff914d;
+    --primary-hover: #ff7f26;
+    --primary-light: rgba(255, 145, 77, 0.2);
+    --primary-shadow: rgba(255, 145, 77, 0.3);
+    
+    --secondary: #2BA8A0;
+    --secondary-hover: #258b83;
+    --secondary-light: rgba(62, 193, 185, 0.2);
+    --secondary-shadow: rgba(62, 193, 185, 0.4);
+    
+    /* Legacy compatibility aliases */
+    --primary-color: #ff914d;
+    --primary-orange: #ff914d;
+    --primary-orange-hover: #ff7f26;
+    --primary-orange-light: rgba(255, 145, 77, 0.2);
+    --primary-orange-shadow: rgba(255, 145, 77, 0.3);
+    --secondary-teal: #2BA8A0;
+    --secondary-teal-light: rgba(62, 193, 185, 0.2);
+    --secondary-teal-shadow: rgba(62, 193, 185, 0.4);
+    
+    --danger-color: #ee5a24;
+    --danger-hover: #c44819;
+    --danger-light: rgba(255, 107, 107, 0.2);
+    --danger-border: rgba(255, 107, 107, 0.4);
+    
+    --background: #f8f9fa;
+    --white: #ffffff;
+    --light-gray: #f8f9fa;
+    --medium-gray: #6c757d;
+    --dark-gray: #333;
+    --border-gray: #ddd;
+    
+    /* Alias for compatibility */
+    --background-primary: #f8f9fa;
+    --background-secondary: #ffffff;
+    --text-primary: #333;
+    --border-color: #ddd;
+    --error-color: #ee5a24;
+    
+    --border-radius: 15px;
+    --border-radius-small: 8px;
+    --box-shadow: 0 8px 32px var(--primary-light);
+    --backdrop-filter: blur(10px);
+    
+    /* Additional variables for consistency */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    --spacing-xxl: 3rem;
+    
+    --text-secondary: #666666;
+    --text-muted: #999999;
+    --info-color: #17a2b8;
+    --success-color: #28a745;
+    --warning-color: #ffc107;
+    
+    --background-glass: rgba(255, 255, 255, 0.95);
+    --content-max-width: 1100px;
+    
+    --border-radius-md: 8px;
+    --border-radius-lg: 12px;
+    --border-radius-xl: 15px;
+    
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 12px rgba(255, 145, 77, 0.15);
+    --shadow-lg: 0 8px 32px rgba(255, 145, 77, 0.2);
+    
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.3s ease;
+    
+    --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    overflow-x: hidden;
+}
+
+body {
+    font-family: var(--font-family);
+    background: var(--background);
+    padding: 20px;
+    margin: 0;
+    min-height: 100vh;
+    color: var(--dark-gray);
+    overflow-x: hidden;
+    width: 100%;
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 5px;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: 0;
+        width: 100%;
+    }
+}
+
+/* Animation keyframes */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from { 
+        opacity: 0;
+        transform: translate(-50%, -60%);
+        scale: 0.9;
+    }
+    to { 
+        opacity: 1;
+        transform: translate(-50%, -50%);
+        scale: 1;
+    }
+}
+
+@keyframes slideInDelete {
+    from { 
+        opacity: 0;
+        transform: translate(-50%, -60%);
+        scale: 0.9;
+    }
+    to { 
+        opacity: 1;
+        transform: translate(-50%, -50%);
+        scale: 1;
+    }
+}

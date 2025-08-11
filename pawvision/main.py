@@ -104,6 +104,9 @@ class PawVisionApp:
             )
             self.logger.info("Video player initialized")
             
+            # Add default YouTube video if none exist
+            self._add_default_video()
+            
             # Initialize GPIO manager
             self.gpio_manager = GPIOManager(
                 self.config,
@@ -214,6 +217,44 @@ class PawVisionApp:
         
         if self.logger:
             self.logger.info("PawVision cleanup complete")
+    
+    def _add_default_video(self):
+        """Add a default YouTube video if no videos exist in the library."""
+        try:
+            # Check if there are any videos in the library (both local files and database entries)
+            existing_videos = self.video_player.get_video_library_entries()
+            if existing_videos:
+                self.logger.debug("Videos already exist in library, skipping default video")
+                return
+            
+            # Add the default YouTube video
+            youtube_manager = self.video_player.library_manager.youtube_manager
+            if youtube_manager:
+                self.logger.info("Adding default YouTube video: MrSYP-cotdg")
+                
+                video_entry = youtube_manager.create_video_entry(
+                    url="https://www.youtube.com/watch?v=MrSYP-cotdg",
+                    custom_title="Unlimited Birds Chipmunks Squirrels",
+                    custom_start_time=8.0,
+                    custom_end_offset=None,
+                    quality="720p",
+                    download=False
+                )
+                
+                if video_entry:
+                    # Add to database
+                    success = self.video_player.library_manager.add_or_update_video(video_entry)
+                    if success:
+                        self.logger.info("Default YouTube video added successfully")
+                    else:
+                        self.logger.error("Failed to add default video to database")
+                else:
+                    self.logger.error("Failed to create default video entry")
+            else:
+                self.logger.warning("YouTube manager not available, cannot add default video")
+                
+        except Exception as e:
+            self.logger.error("Error adding default video: %s", e)
     
     def run_forever(self):
         """Run the application until interrupted."""

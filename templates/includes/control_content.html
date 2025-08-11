@@ -1,0 +1,68 @@
+<h2>🎮 Video Control Center</h2>
+
+<div class="control-section">
+    <div class="status-display">
+        <div class="status-card">
+            <h3>📺 Current Status</h3>
+            <div class="status-info">
+                <div class="status-item">
+                    <span class="status-label">Playing:</span>
+                    <span class="status-value" id="playing-status">{{ "Yes" if status.is_playing else "No" }}</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Videos Available:</span>
+                    <span class="status-value">{{ videos|length }}</span>
+                </div>
+                {% if status.next_scheduled_play %}
+                <div class="status-item">
+                    <span class="status-label">Next Scheduled:</span>
+                    <span class="status-value">{{ status.next_scheduled_play }}</span>
+                </div>
+                {% endif %}
+                {% if stats %}
+                <div class="status-item">
+                    <span class="status-label">Button Presses Today:</span>
+                    <span class="status-value">{{ stats.today_button_presses or 0 }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="controls-grid">
+        <button onclick="VideoManager.playVideo()" class="control-button primary" id="play-button">
+            ▶️ Play Random Video
+        </button>
+        <button onclick="VideoManager.stopVideo()" class="control-button danger" id="stop-button">
+            ⏹️ Stop Playback
+        </button>
+    </div>
+
+    {% if recent_videos %}
+    <div class="recent-videos">
+        <h3>🕒 Recently Added Videos</h3>
+        <div class="video-preview-grid">
+            {% for video in recent_videos %}
+            <div class="video-preview-card">
+                <div class="video-preview-info">
+                    <div class="video-preview-title">{{ video.display_title }}</div>
+                    <div class="video-preview-meta">
+                        {% if video.is_youtube %}
+                        <span class="video-type youtube">🎬 YouTube</span>
+                        {% else %}
+                        <span class="video-type local">📹 Local</span>
+                        {% endif %}
+                        <span class="video-duration">{{ video.duration_str }}</span>
+                    </div>
+                </div>
+                <button onclick="VideoManager.playSpecificVideo('{{ video.path }}')" class="btn-secondary btn-sm">
+                    ▶️ Play
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<div id="control-status-message" class="status-message" style="display: none;"></div>

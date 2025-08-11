@@ -187,7 +187,6 @@ body {
 .logo {
   max-width: 80px;
   height: auto;
-  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
   flex-shrink: 0;
 }
 

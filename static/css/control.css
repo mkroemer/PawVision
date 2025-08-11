@@ -1,0 +1,235 @@
+/* PawVision Control Center Styles */
+
+.control-section {
+    display: grid;
+    gap: 2rem;
+}
+
+.status-display {
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-light);
+}
+
+.status-card h3 {
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+}
+
+.status-info {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.status-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    background: var(--background-secondary);
+    border-radius: 4px;
+}
+
+.status-label {
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+.status-value {
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.controls-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.control-button {
+    padding: 1.5rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.control-button.primary {
+    background: var(--primary);
+    color: white;
+}
+
+.control-button.primary:hover {
+    background: var(--primary-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-medium);
+}
+
+.control-button.danger {
+    background: var(--danger-color);
+    color: white;
+}
+
+.control-button.danger:hover {
+    background: var(--danger-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-medium);
+}
+
+.quick-actions {
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-light);
+}
+
+.action-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.action-card {
+    background: var(--background-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.action-card:hover {
+    background: var(--background-primary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-light);
+}
+
+.action-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.action-title {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: var(--text-primary);
+}
+
+.action-desc {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.recent-videos {
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-light);
+}
+
+.video-preview-grid {
+    display: grid;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.video-preview-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: var(--background-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+}
+
+.video-preview-card:hover {
+    background: var(--background-primary);
+}
+
+.video-preview-title {
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.video-preview-meta {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.video-type.youtube {
+    color: var(--youtube-color, #FF0000);
+}
+
+.video-type.local {
+    color: var(--primary);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .control-section {
+        gap: 1rem;
+    }
+    
+    .status-display,
+    .quick-actions {
+        padding: 1rem;
+        margin: 0 5px;
+    }
+    
+    .controls-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+    
+    .control-button {
+        padding: 1rem;
+        font-size: 1rem;
+    }
+    
+    .action-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .control-section {
+        gap: 0.75rem;
+    }
+    
+    .status-display,
+    .quick-actions {
+        padding: 0.75rem;
+        margin: 0;
+    }
+    
+    .control-button {
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+    
+    .status-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+    
+    .video-preview-meta {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+}

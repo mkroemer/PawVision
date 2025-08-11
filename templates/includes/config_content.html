@@ -1,0 +1,211 @@
+<h2>⚙️ System Configuration</h2>
+
+<form method="POST" action="/settings">
+    <!-- Video Settings Card -->
+    <div class="settings-card">
+        <h3>🎬 Video Settings</h3>
+        <div class="form-group">
+            <label for="playback_duration">
+                Playback Duration (minutes)
+                <span class="tooltip">
+                    <i>?</i>
+                    <span class="tooltiptext">How long videos will play before automatically stopping</span>
+                </span>
+            </label>
+            <input type="number" id="playback_duration" name="playback_duration" value="{{ settings.playback_duration_minutes }}" min="1" max="240">
+        </div>
+        
+        <div class="form-group">
+            <label for="post_playback_cooldown">
+                Post-Playback Cooldown (minutes)
+                <span class="tooltip">
+                    <i>?</i>
+                    <span class="tooltiptext">Wait time before allowing another video to start</span>
+                </span>
+            </label>
+            <input type="number" id="post_playback_cooldown" name="post_playback_cooldown" value="{{ settings.post_playback_cooldown_minutes }}" min="0" max="60">
+        </div>
+
+        <div class="form-group">
+            <label for="volume">
+                Volume (0-100)
+                <span class="tooltip">
+                    <i>?</i>
+                    <span class="tooltiptext">Default volume level for video playback</span>
+                </span>
+            </label>
+            <input type="range" id="volume" name="volume" value="{{ settings.volume }}" min="0" max="100" class="slider">
+            <span class="slider-value" id="volume-value">{{ settings.volume }}%</span>
+        </div>
+    </div>
+
+    <!-- Button Control Card -->
+    <div class="settings-card">
+        <h3>🎛️ Button Control</h3>
+        
+        <div class="form-group">
+            <label class="checkbox-label">
+                <input type="checkbox" name="button_enabled" {% if settings.button_enabled %}checked{% endif %}>
+                <span class="checkmark"></span>
+                Enable Hardware Button
+                <small>Allow physical button to trigger video playback</small>
+            </label>
+        </div>
+        
+        <div class="form-group">
+            <label for="button_cooldown">
+                Button Cooldown (seconds)
+                <span class="tooltip">
+                    <i>?</i>
+                    <span class="tooltiptext">Minimum time between button presses</span>
+                </span>
+            </label>
+            <input type="number" id="button_cooldown" name="button_cooldown" value="{{ settings.button_cooldown_seconds }}" min="0" max="300">
+        </div>
+    </div>
+
+    <!-- Motion Detection Card -->
+    <div class="settings-card">
+        <h3>📹 Motion Detection</h3>
+        
+        <div class="form-group">
+            <label class="checkbox-label">
+                <input type="checkbox" name="motion_stop_enabled" {% if settings.motion_stop_enabled %}checked{% endif %}>
+                <span class="checkmark"></span>
+                Enable Motion Stop
+                <small>Automatically stop videos when no pet movement is detected</small>
+            </label>
+        </div>
+        
+        <div class="form-group">
+            <label for="motion_sensitivity">
+                Motion Sensitivity (1-10)
+                <span class="tooltip">
+                    <i>?</i>
+                    <span class="tooltiptext">How sensitive the motion detection should be</span>
+                </span>
+            </label>
+            <input type="range" id="motion_sensitivity" name="motion_sensitivity" value="{{ settings.motion_sensitivity or 5 }}" min="1" max="10" class="slider">
+            <span class="slider-value" id="motion-sensitivity-value">{{ settings.motion_sensitivity or 5 }}</span>
+        </div>
+        
+        <div class="form-group">
+            <label for="motion_stop_timeout">
+                Motion Stop Timeout (seconds)
+                <span class="tooltip">
+                    <i>?</i>
+                    <span class="tooltiptext">How long to wait with no motion before stopping the video</span>
+                </span>
+            </label>
+            <input type="number" id="motion_stop_timeout" name="motion_stop_timeout" value="{{ settings.motion_stop_timeout_seconds or 300 }}" min="10" max="1800">
+        </div>
+    </div>
+
+    <!-- Scheduling Card -->
+    <div class="settings-card">
+        <h3>⏰ Scheduling</h3>
+        
+        <div class="form-group">
+            <label class="checkbox-label">
+                <input type="checkbox" name="scheduled_playback_enabled" {% if settings.scheduled_playback_enabled %}checked{% endif %}>
+                <span class="checkmark"></span>
+                Enable Scheduled Playback
+                <small>Automatically play videos at specific times each day</small>
+            </label>
+        </div>
+        
+        <div class="schedule-times-section">
+            <div class="section-header">
+                <label>Scheduled Times</label>
+                <button type="button" class="btn-secondary btn-sm" onclick="ConfigManager.addScheduleTime()">
+                    ➕ Add Time
+                </button>
+            </div>
+            
+            <div id="schedule-times-list" class="schedule-times-list">
+                {% if settings.schedule_times %}
+                    {% for time in settings.schedule_times %}
+                    <div class="schedule-time-item">
+                        <input type="time" name="schedule_times[]" value="{{ time }}" class="schedule-time-input">
+                        <button type="button" class="btn-danger btn-sm" onclick="ConfigManager.removeScheduleTime(this)">
+                            🗑️ Remove
+                        </button>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="schedule-time-item">
+                        <input type="time" name="schedule_times[]" value="08:00" class="schedule-time-input">
+                        <button type="button" class="btn-danger btn-sm" onclick="ConfigManager.removeScheduleTime(this)">
+                            🗑️ Remove
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="empty-schedule-message" id="empty-schedule-message" style="display: none;">
+                <p class="text-muted">No scheduled times. Click "Add Time" to create your first schedule.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Night Mode Card -->
+    <div class="settings-card">
+        <h3>🌙 Night Mode</h3>
+        
+        <div class="form-group">
+            <label class="checkbox-label">
+                <input type="checkbox" name="night_mode_enabled" {% if settings.night_mode_enabled %}checked{% endif %}>
+                <span class="checkmark"></span>
+                Enable Night Mode
+                <small>Automatically reduce volume during nighttime hours</small>
+            </label>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label for="night_mode_start">
+                    Night Mode Start (HH:MM)
+                    <span class="tooltip">
+                        <i>?</i>
+                        <span class="tooltiptext">Time when night mode begins (quieter playback)</span>
+                    </span>
+                </label>
+                <input type="time" id="night_mode_start" name="night_mode_start" value="{{ settings.night_mode_start or '22:00' }}">
+            </div>
+            
+            <div class="form-group">
+                <label for="night_mode_end">
+                    Night Mode End (HH:MM)
+                    <span class="tooltip">
+                        <i>?</i>
+                        <span class="tooltiptext">Time when night mode ends</span>
+                    </span>
+                </label>
+                <input type="time" id="night_mode_end" name="night_mode_end" value="{{ settings.night_mode_end or '07:00' }}">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="night_volume">
+                Night Mode Volume (0-100)
+                <span class="tooltip">
+                    <i>?</i>
+                    <span class="tooltiptext">Volume level to use during night mode hours</span>
+                </span>
+            </label>
+            <input type="range" id="night_volume" name="night_volume" value="{{ settings.night_volume or 25 }}" min="0" max="100" class="slider">
+            <span class="slider-value" id="night-volume-value">{{ settings.night_volume or 25 }}%</span>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="form-actions">
+        <button type="submit" class="btn-primary">Save Settings</button>
+    </div>
+</form>
+
+{% if settings.success_message %}
+<div class="success-message">
+    {{ settings.success_message }}
+</div>
+{% endif %}

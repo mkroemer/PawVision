@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="PawVision Pet Entertainment System - Complete control dashboard">
+    <meta name="author" content="PawVision">
+    
+    <title>PawVision Dashboard</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/static/pawvision.png">
+    <link rel="apple-touch-icon" href="/static/pawvision.png">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="/static/css/main.css">
+    
+    <!-- Theme color for browser UI -->
+    <meta name="theme-color" content="#FF914D">
+    
+    <!-- Scripts -->
+    <script src="/static/js/main.js"></script>
+</head>
+
+<body>
+    {% include 'includes/header.html' %}
+    
+    <!-- Navigation -->
+    <nav class="menu" role="navigation" aria-label="Main navigation">
+        <button class="header-link active" onclick="SPA.switchTab(event, 'control')" data-tab="control" aria-current="page">🎮 Control</button>
+        <button class="header-link" onclick="SPA.switchTab(event, 'playlist')" data-tab="playlist">📋 Playlist</button>
+        <button class="header-link" onclick="SPA.switchTab(event, 'statistics')" data-tab="statistics">📊 Statistics</button>
+        <button class="header-link" onclick="SPA.switchTab(event, 'config')" data-tab="config">⚙️ Configuration</button>
+    </nav>
+
+    <main class="section" role="main" id="main-content">
+        <div class="tab-container">
+            <!-- Control Tab Content -->
+            <div id="control" class="tab-content active">
+                {% include "includes/control_content.html" %}
+            </div>
+
+            <!-- Playlist Tab Content -->
+            <div id="playlist" class="tab-content">
+                {% include "includes/playlist_content.html" %}
+            </div>
+
+            <!-- Statistics Tab Content -->
+            <div id="statistics" class="tab-content">
+                {% include "includes/statistics_content.html" %}
+            </div>
+
+            <!-- Configuration Tab Content -->
+            <div id="config" class="tab-content">
+                {% include "includes/config_content.html" %}
+            </div>
+        </div>
+    </main>
+
+    {% include 'includes/footer.html' %}
+
+    <!-- Status message for feedback -->
+    <div id="status-message" style="display: none; position: fixed; top: 20px; right: 20px; z-index: 1000; padding: 15px 20px; border-radius: 8px; font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></div>
+    
+    <!-- Scripts -->
+    <script src="/static/chart.min.js"></script>
+    <script>
+    // Dashboard initialization
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize SPA navigation system (defined in navigation.js)
+        if (typeof SPA !== 'undefined') {
+            SPA.init();
+        }
+    });
+    </script>
+</body>
+</html>

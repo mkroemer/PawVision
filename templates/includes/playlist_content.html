@@ -1,0 +1,195 @@
+<h2>📋 Video Library Management</h2>
+
+<div class="upload-section">
+    <!-- Compact Upload Forms -->
+    <div class="upload-forms-compact">
+        <!-- Upload Local Video - One Line -->
+        <div class="upload-line">
+            <span class="upload-label">📤 Upload Video:</span>
+            <form id="video-upload-form" method="POST" action="/api/video/upload" enctype="multipart/form-data" class="upload-form-inline">
+                <input type="file" name="file" id="playlist-file-input" required accept="video/*" class="file-input-inline">
+                <button type="submit" class="btn-primary btn-compact">Upload</button>
+            </form>
+        </div>
+        
+        <!-- YouTube Video - One Line with Expandable Advanced -->
+        <div class="youtube-line">
+            <span class="upload-label">🎬 Add YouTube:</span>
+            <form id="youtube-form" class="youtube-form-inline">
+                <input type="url" id="youtube-url-quick" placeholder="Paste YouTube URL..." required class="url-input-compact">
+                <button type="button" id="advanced-toggle-btn" onclick="YouTube.toggleAdvancedOptions()" class="btn-secondary btn-compact">
+                    ⚙️ Advanced
+                </button>
+                <button type="submit" class="btn-primary btn-compact">Add</button>
+            </form>
+        </div>
+    </div>
+        
+        <!-- Advanced Form (Initially Hidden) -->
+        <div id="youtube-advanced-form" class="advanced-form" style="display: none; margin-top: 20px;">
+            <!-- Advanced options are part of the main form above -->
+            <div class="youtube-advanced">
+                <div class="form-group">
+                    <label for="youtube-title">Custom Title (optional)</label>
+                    <input type="text" id="youtube-title" name="title" placeholder="Leave empty to use video title" form="youtube-form">
+                </div>
+                
+                <div class="form-group">
+                    <label for="youtube-quality">Quality</label>
+                    <select id="youtube-quality" name="quality" form="youtube-form">
+                        <option value="360p">360p</option>
+                        <option value="480p">480p</option>
+                        <option value="720p" selected>720p (recommended)</option>
+                        <option value="1080p">1080p</option>
+                    </select>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="youtube-start">Start Time (seconds)</label>
+                        <input type="number" id="youtube-start" name="start_time" min="0" step="0.1" value="0" form="youtube-form">
+                    </div>
+                    <div class="form-group">
+                        <label for="youtube-end">End Offset (seconds from end)</label>
+                        <input type="number" id="youtube-end" name="end_offset" min="0" step="0.1" placeholder="e.g., 30 to cut last 30 seconds" form="youtube-form">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="youtube-download" name="download" form="youtube-form">
+                        <span class="checkmark"></span>
+                        Download for offline playback
+                        <small>(recommended for better performance)</small>
+                    </label>
+                </div>
+            </div>
+        </div>
+        
+        <div id="youtube-message" class="message-area" style="display: none;"></div>
+</div>
+
+<div class="library-section">
+    <div class="library-header">
+        <h3>🎞️ Video Library (<span id="video-count">{{ videos|length }}</span> videos)</h3>
+    </div>
+
+    <div id="video-library-container">
+        {% if videos %}
+        <div class="video-library">
+            {% for v in videos %}
+            <div class="video-item" id="video-{{ loop.index }}" data-path="{{ v.path }}">
+                <div class="video-info">
+                    <div class="video-title">
+                        {% if v.is_youtube %}
+                        <span class="video-type youtube">🎬</span>
+                        {% else %}
+                        <span class="video-type local">📹</span>
+                        {% endif %}
+                        <strong>{{ v.display_title }}</strong>
+                    </div>
+                    
+                    <div class="video-details">
+                        {% if v.is_youtube %}
+                        <span class="detail-item">YouTube Video{% if v.youtube_id %} (ID: {{ v.youtube_id }}){% endif %}</span>
+                        {% if v.download_path %}
+                        <span class="detail-item status-downloaded">✓ Downloaded for offline playback</span>
+                        {% else %}
+                        <span class="detail-item status-streaming">⚠ Streaming only</span>
+                        {% endif %}
+                        {% elif v.title and v.title != v.filename %}
+                        <span class="detail-item">File: {{ v.filename }}</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="video-metadata">
+                        {% if not v.is_youtube %}
+                        <span class="metadata-item">Size: {{ v.size_mb }} MB</span>
+                        {% endif %}
+                        <span class="metadata-item">Duration: {{ v.duration_str }}</span>
+                        {% if v.effective_duration_str != v.duration_str %}
+                        <span class="metadata-item">Effective: {{ v.effective_duration_str }}</span>
+                        {% endif %}
+                        {% if v.is_youtube and v.quality %}
+                        <span class="metadata-item">Quality: {{ v.quality }}</span>
+                        {% endif %}
+                    </div>
+                    
+                    {% if v.custom_start_time > 0 or v.custom_end_time %}
+                    <div class="custom-range">
+                        Custom range: {{ "%.1f"|format(v.custom_start_time) }}s - 
+                        {% if v.custom_end_time %}
+                            {% if v.duration %}
+                                end-{{ "%.1f"|format(v.duration - v.custom_end_time) }}s
+                            {% else %}
+                                {{ "%.1f"|format(v.custom_end_time) }}s
+                            {% endif %}
+                        {% else %}
+                            end
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="video-actions">
+                    <button onclick="VideoManager.playSpecificVideo('{{ v.path }}')" class="btn-secondary btn-sm play-btn">
+                        ▶️ Play
+                    </button>
+                    
+                    {% if v.is_youtube and not v.download_path %}
+                    <button class="btn-secondary btn-sm download-btn" 
+                            data-path="{{ v.path }}"
+                            data-quality="{{ v.quality|default('720p') }}"
+                            onclick="YouTube.downloadVideo('{{ v.path }}', '{{ v.quality|default('720p') }}')">
+                        📥 Download
+                    </button>
+                    {% endif %}
+                    
+                    <button class="btn-secondary btn-sm edit-btn" 
+                            data-path="{{ v.path }}" 
+                            data-title="{{ v.title or '' }}" 
+                            data-start="{{ v.custom_start_time or 0 }}" 
+                            data-end="{{ v.custom_end_time or 0 }}" 
+                            data-duration="{{ v.duration or 0 }}">
+                        ✏️ Edit
+                    </button>
+                    
+                    <button class="btn-danger btn-sm delete-btn" 
+                            data-path="{{ v.path }}"
+                            data-title="{{ v.display_title or v.filename }}">
+                        🗑️ Delete
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-library">
+            <div class="empty-icon">📁</div>
+            <h3>No Videos Yet</h3>
+            <p>Upload your first video or add one from YouTube to get started!</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Upload Progress Modal -->
+<div id="upload-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>📤 Uploading Video</h3>
+        </div>
+        <div class="modal-body">
+            <div class="upload-progress">
+                <div class="progress-bar">
+                    <div id="upload-progress-fill" class="progress-fill"></div>
+                </div>
+                <div id="upload-status" class="upload-status">Preparing upload...</div>
+                <div id="upload-filename" class="upload-filename"></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button id="cancel-upload-btn" type="button" class="btn-danger">Cancel Upload</button>
+        </div>
+    </div>
+</div>
