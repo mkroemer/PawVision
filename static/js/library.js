@@ -33,8 +33,11 @@ const Library = {
             }
         } catch (error) {
             console.error('Failed to refresh library:', error);
-            if (typeof VideoManager !== 'undefined') {
-                VideoManager.showMessage('Failed to refresh library', 'error');
+            const errorMessage = typeof t !== 'undefined' ? t('library.failedToRefreshLibrary') : 'Failed to refresh library';
+            if (typeof NotificationSystem !== 'undefined') {
+                NotificationSystem.show(errorMessage, 'error');
+            } else if (typeof VideoManager !== 'undefined') {
+                VideoManager.showMessage(errorMessage, 'error');
             }
         } finally {
             this._refreshing = false;
@@ -79,7 +82,8 @@ const Library = {
         const file = fileInput.files[0];
         
         if (!file) {
-            this.showMessage('Please select a file to upload', 'error');
+            const errorMessage = typeof t !== 'undefined' ? t('library.pleaseSelectFile') : 'Please select a file to upload';
+            this.showMessage(errorMessage, 'error');
             return;
         }
 
@@ -105,33 +109,39 @@ const Library = {
             if (this.currentUploadXHR.status === 200) {
                 try {
                     const response = JSON.parse(this.currentUploadXHR.responseText);
-                    this.updateUploadProgress(100, 'Upload complete!');
+                    const completeMessage = typeof t !== 'undefined' ? t('library.uploadComplete') : 'Upload complete!';
+                    this.updateUploadProgress(100, completeMessage);
                     setTimeout(() => {
                         this.hideUploadModal();
-                        this.showMessage('Video uploaded successfully!', 'success');
+                        const successMessage = typeof t !== 'undefined' ? t('library.videoUploadedSuccessfully') : 'Video uploaded successfully!';
+                        this.showMessage(successMessage, 'success');
                         this.refreshLibrary();
                         form.reset();
                     }, 1000);
                 } catch (error) {
                     this.hideUploadModal();
-                    this.showMessage('Upload completed but response was invalid', 'error');
+                    const errorMessage = typeof t !== 'undefined' ? t('library.uploadInvalidResponse') : 'Upload completed but response was invalid';
+                    this.showMessage(errorMessage, 'error');
                 }
             } else {
                 this.hideUploadModal();
-                this.showMessage('Upload failed', 'error');
+                const errorMessage = typeof t !== 'undefined' ? t('library.uploadFailed') : 'Upload failed';
+                this.showMessage(errorMessage, 'error');
             }
         });
         
         // Set up error handler
         this.currentUploadXHR.addEventListener('error', () => {
             this.hideUploadModal();
-            this.showMessage('Upload failed due to network error', 'error');
+            const errorMessage = typeof t !== 'undefined' ? t('library.uploadNetworkError') : 'Upload failed due to network error';
+            this.showMessage(errorMessage, 'error');
         });
         
         // Set up abort handler
         this.currentUploadXHR.addEventListener('abort', () => {
             this.hideUploadModal();
-            this.showMessage('Upload cancelled', 'info');
+            const cancelMessage = typeof t !== 'undefined' ? t('library.uploadCancelled') : 'Upload cancelled';
+            this.showMessage(cancelMessage, 'info');
         });
         
         // Start upload

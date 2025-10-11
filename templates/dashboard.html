@@ -60,17 +60,30 @@
     {% include 'includes/footer.html' %}
 
     <!-- Status message for feedback -->
-    <div id="status-message" style="display: none; position: fixed; top: 20px; right: 20px; z-index: 1000; padding: 15px 20px; border-radius: 8px; font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></div>
+    <div id="status-message" class="status-message" style="display: none;"></div>
     
     <!-- Scripts -->
     <script src="/static/chart.min.js"></script>
     <script>
     // Dashboard initialization
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize SPA navigation system (defined in navigation.js)
-        if (typeof SPA !== 'undefined') {
-            SPA.init();
-        }
+        console.log('🐾 Dashboard DOM loaded');
+        
+        // Note: Application initialization is handled by main.js module loader
+        // SPA navigation system is initialized automatically
+        
+        // Additional dashboard-specific initialization can go here
+        setTimeout(() => {
+            // Ensure status elements are available
+            if (!document.getElementById('status-message')) {
+                console.warn('Status message element not found, creating one');
+                const statusDiv = document.createElement('div');
+                statusDiv.id = 'status-message';
+                statusDiv.className = 'status-message';
+                statusDiv.style.display = 'none';
+                document.body.appendChild(statusDiv);
+            }
+        }, 100);
     });
     </script>
 </body>

@@ -42,14 +42,23 @@ const Statistics = {
     },
     
     // Filter time periods
-    filterTime(period) {
+    filterTime(period, event = null) {
         this.currentFilter = period;
         
         // Update active button
         document.querySelectorAll('.filter button').forEach(btn => {
             btn.classList.remove('active');
         });
-        event.target.classList.add('active');
+        
+        // Set active button (either from event or find by period)
+        if (event && event.target) {
+            event.target.classList.add('active');
+        } else {
+            const targetBtn = document.querySelector(`.filter button[data-period="${period}"]`);
+            if (targetBtn) {
+                targetBtn.classList.add('active');
+            }
+        }
         
         this.loadData(period);
     },
@@ -75,16 +84,43 @@ const Statistics = {
     async loadData(period = '24h') {
         try {
             const response = await fetch(`/api/statistics?period=${period}`);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
             const data = await response.json();
             
-            if (data.status === 'success') {
-                this.updateStatsCards(data.stats);
-                // Don't load chart here - it's handled separately by date changes
+            if (data.status === 'success' || data.success) {
+                // Handle both possible response formats
+                const stats = data.stats || data;
+                this.updateStatsCards(stats);
             } else {
-                console.error('Failed to load statistics:', data.message);
+                console.error('Failed to load statistics:', data.message || data.error);
+                const errorMessage = typeof t !== 'undefined' ? t('statistics.failedToLoadStats') : 'Failed to load statistics data';
+                this.showStatsError(errorMessage);
             }
         } catch (error) {
             console.error('Error loading statistics:', error);
+            const errorMessage = typeof t !== 'undefined' ? t('statistics.errorConnectingServer') : 'Error connecting to server';
+            this.showStatsError(errorMessage);
+        }
+    },
+    
+    // Show error in stats area
+    showStatsError(message) {
+        const elements = ['total-plays', 'total-duration', 'avg-daily', 'avg-watch-time'];
+        const errorText = typeof t !== 'undefined' ? t('common.error') : 'Error';
+        elements.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = errorText;
+                element.style.color = 'var(--error-color, #ee5a24)';
+            }
+        });
+        
+        if (typeof NotificationSystem !== 'undefined') {
+            NotificationSystem.show(message, 'error');
         }
     },
     
@@ -92,15 +128,16 @@ const Statistics = {
     updateStatsCards(stats) {
         const elements = {
             'total-plays': stats.total_plays || 0,
-            'total-duration': stats.total_watch_time_str || "0m",
-            'avg-daily': stats.avg_daily_plays || 0,
-            'avg-watch-time': stats.avg_watch_time_str || "0m"
+            'total-duration': stats.total_watch_time_str || stats.total_duration_str || "0m",
+            'avg-daily': stats.avg_daily_plays || stats.average_daily_plays || 0,
+            'avg-watch-time': stats.avg_watch_time_str || stats.average_watch_time_str || "0m"
         };
         
         Object.entries(elements).forEach(([id, value]) => {
             const element = document.getElementById(id);
             if (element) {
                 element.textContent = value;
+                element.style.color = ''; // Reset error color if any
             }
         });
     },
@@ -119,24 +156,47 @@ const Statistics = {
             return;
         }
         
+        // Show loading state
+        chartElement.innerHTML = '<div class="chart-loading">Loading chart data...</div>';
+        
         try {
             const response = await fetch(`/api/statistics/hourly?date=${date}`);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
             const data = await response.json();
             
-            if (data.status === 'success') {
-                this.renderPlaysChart(data.hourly_data || []);
+            if (data.status === 'success' || data.success) {
+                const hourlyData = data.hourly_data || data.data || [];
+                this.renderPlaysChart(hourlyData);
             } else {
-                console.error('Failed to load hourly data:', data.message);
-                // Show error in chart
-                chartElement.innerHTML = '<div class="chart-error">Failed to load chart data</div>';
+                console.error('Failed to load hourly data:', data.message || data.error);
+                const errorMessage = typeof t !== 'undefined' ? t('statistics.failedToLoadChart') : 'Failed to load chart data';
+                this.showChartError(errorMessage);
             }
         } catch (error) {
             console.error('Error loading hourly data:', error);
-            // Show error in chart
-            const chartElement = document.getElementById('plays-chart');
-            if (chartElement) {
-                chartElement.innerHTML = '<div class="chart-error">Error loading chart data</div>';
-            }
+            const errorMessage = typeof t !== 'undefined' ? t('statistics.errorLoadingChart') : 'Error loading chart data';
+            this.showChartError(errorMessage);
+        }
+    },
+    
+    // Show error in chart
+    showChartError(message) {
+        const chartElement = document.getElementById('plays-chart');
+        if (chartElement) {
+            const retryText = typeof t !== 'undefined' ? t('statistics.retry') : '🔄 Retry';
+            chartElement.innerHTML = `
+                <div class="chart-error">
+                    <div class="error-icon">⚠️</div>
+                    <div class="error-message">${message}</div>
+                    <button onclick="Statistics.loadPlaysChart(Statistics.currentDate)" class="btn-secondary btn-sm">
+                        ${retryText}
+                    </button>
+                </div>
+            `;
         }
     },
     

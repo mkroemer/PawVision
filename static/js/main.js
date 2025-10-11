@@ -31,32 +31,66 @@
         });
     }
     
-    // Load all modules sequentially
+    // Load all modules sequentially with better error handling
     async function loadModules() {
-        try {
-            for (const module of modules) {
+        const failedModules = [];
+        
+        for (const module of modules) {
+            try {
                 await loadScript(module);
                 console.log(`✅ Loaded: ${module}`);
+            } catch (error) {
+                console.error(`❌ Failed to load ${module}:`, error);
+                failedModules.push(module);
+                
+                // Continue loading other modules instead of failing completely
+                // Some modules might be optional or have fallbacks
+                continue;
             }
+        }
+        
+        if (failedModules.length > 0) {
+            console.warn(`⚠️ Some modules failed to load: ${failedModules.join(', ')}`);
+            console.warn('🔄 Application will continue with available modules');
+        } else {
             console.log('🎉 All PawVision modules loaded successfully');
-            
-            // Initialize the application after all modules are loaded
-            if (document.readyState === 'complete' || document.readyState === 'interactive') {
-                // DOM is already ready, initialize immediately
-                if (typeof PawVisionApp !== 'undefined') {
-                    PawVisionApp.init();
-                }
-            } else {
-                // Wait for DOM to be ready
-                document.addEventListener('DOMContentLoaded', function() {
-                    if (typeof PawVisionApp !== 'undefined') {
-                        PawVisionApp.init();
+        }
+        
+        // Initialize the application after all modules are loaded (or failed)
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            // DOM is already ready, initialize immediately
+            initializeApplication();
+        } else {
+            // Wait for DOM to be ready
+            document.addEventListener('DOMContentLoaded', initializeApplication);
+        }
+    }
+    
+    // Separate initialization function for cleaner code
+    function initializeApplication() {
+        if (typeof PawVisionApp !== 'undefined') {
+            try {
+                PawVisionApp.init();
+            } catch (error) {
+                console.error('❌ Failed to initialize PawVision application:', error);
+                // Show user-friendly error message
+                setTimeout(() => {
+                    const body = document.body;
+                    if (body) {
+                        body.innerHTML = `
+                            <div style="padding: 40px; text-align: center; color: #ee5a24;">
+                                <h2>⚠️ Application Error</h2>
+                                <p>PawVision failed to initialize properly. Please refresh the page.</p>
+                                <button onclick="location.reload()" style="padding: 10px 20px; margin-top: 20px; background: #2BA8A0; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                    🔄 Refresh Page
+                                </button>
+                            </div>
+                        `;
                     }
-                });
+                }, 100);
             }
-        } catch (error) {
-            console.error('❌ Failed to load module:', error);
-            throw error; // Re-throw to let caller handle
+        } else {
+            console.error('❌ PawVisionApp not available, initialization skipped');
         }
     }
     

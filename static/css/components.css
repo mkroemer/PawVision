@@ -1,5 +1,136 @@
 /* Component Styles */
 
+/* Utility Classes */
+.hidden {
+    display: none !important;
+}
+
+.show {
+    display: block !important;
+}
+
+/* Advanced Form */
+.advanced-form {
+    margin-top: 20px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: var(--border-radius-small);
+    border: 1px solid rgba(255, 145, 77, 0.2);
+}
+
+.advanced-form.hidden {
+    display: none;
+}
+
+/* Message Areas */
+.message-area {
+    margin-top: 15px;
+    padding: 10px 15px;
+    border-radius: var(--border-radius-small);
+    font-weight: 500;
+}
+
+.message-area.hidden {
+    display: none;
+}
+
+.message-area.success {
+    background-color: rgba(62, 193, 185, 0.1);
+    color: var(--success-color, #2BA8A0);
+    border: 1px solid rgba(62, 193, 185, 0.3);
+}
+
+.message-area.error {
+    background-color: rgba(255, 107, 107, 0.1);
+    color: var(--error-color, #ee5a24);
+    border: 1px solid rgba(255, 107, 107, 0.3);
+}
+
+/* Notification System */
+.status-message {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    padding: 15px 20px;
+    border-radius: 8px;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    max-width: 400px;
+    word-wrap: break-word;
+    transform: translateX(100%);
+    transition: transform 0.3s ease-in-out;
+}
+
+.status-message[style*="block"] {
+    transform: translateX(0);
+}
+
+.status-message.success {
+    background-color: rgba(62, 193, 185, 0.95);
+    color: white;
+    border: 1px solid rgba(62, 193, 185, 0.8);
+}
+
+.status-message.error {
+    background-color: rgba(255, 107, 107, 0.95);
+    color: white;
+    border: 1px solid rgba(255, 107, 107, 0.8);
+}
+
+.status-message.warning {
+    background-color: rgba(255, 177, 66, 0.95);
+    color: white;
+    border: 1px solid rgba(255, 177, 66, 0.8);
+}
+
+.status-message.info {
+    background-color: rgba(74, 144, 226, 0.95);
+    color: white;
+    border: 1px solid rgba(74, 144, 226, 0.8);
+}
+
+/* Chart Error States */
+.chart-error, .chart-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--medium-gray);
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: var(--border-radius-small);
+    border: 2px dashed rgba(255, 145, 77, 0.3);
+}
+
+.chart-error .error-icon {
+    font-size: 2em;
+    margin-bottom: 10px;
+    color: var(--error-color, #ee5a24);
+}
+
+.chart-error .error-message {
+    margin-bottom: 15px;
+    font-weight: 500;
+}
+
+.chart-loading {
+    min-height: 200px;
+}
+
+.chart-loading::before {
+    content: "⏳";
+    font-size: 2em;
+    margin-bottom: 10px;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
+}
+
 /* Video Items */
 .video-item {
     background: rgba(255, 255, 255, 0.9);

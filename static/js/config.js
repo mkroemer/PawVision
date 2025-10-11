@@ -64,7 +64,8 @@ const ConfigManager = {
                 
                 if (scheduleInputs.length === 0) {
                     e.preventDefault();
-                    alert('Please add at least one scheduled time');
+                    const alertMessage = typeof t !== 'undefined' ? t('config.pleaseAddScheduledTime') : 'Please add at least one scheduled time';
+                    alert(alertMessage);
                     return false;
                 }
                 
@@ -74,14 +75,16 @@ const ConfigManager = {
                 
                 if (times.length !== uniqueTimes.length) {
                     e.preventDefault();
-                    alert('Please remove duplicate scheduled times');
+                    const alertMessage = typeof t !== 'undefined' ? t('config.removeDuplicateTimes') : 'Please remove duplicate scheduled times';
+                    alert(alertMessage);
                     return false;
                 }
                 
                 // Check for empty times
                 if (times.some(time => !time)) {
                     e.preventDefault();
-                    alert('Please set all scheduled times');
+                    const alertMessage = typeof t !== 'undefined' ? t('config.setAllScheduledTimes') : 'Please set all scheduled times';
+                    alert(alertMessage);
                     return false;
                 }
             }
@@ -95,7 +98,8 @@ const ConfigManager = {
                 
                 if (!startTime || !endTime) {
                     e.preventDefault();
-                    alert('Please set both night mode start and end times');
+                    const alertMessage = typeof t !== 'undefined' ? t('config.setNightModeTimes') : 'Please set both night mode start and end times';
+                    alert(alertMessage);
                     return false;
                 }
             }
@@ -121,7 +125,8 @@ const ConfigManager = {
      * Reset form to default values
      */
     resetForm() {
-        if (!confirm('Reset all settings to default values? This cannot be undone.')) {
+        const confirmMessage = typeof t !== 'undefined' ? t('config.resetConfirmation') : 'Reset all settings to default values? This cannot be undone.';
+        if (!confirm(confirmMessage)) {
             return;
         }
 

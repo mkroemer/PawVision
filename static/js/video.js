@@ -17,14 +17,17 @@ const VideoManager = {
             const result = await response.json();
             
             if (result.success) {
-                this.showMessage('Video playback started!', 'success');
+                const message = typeof t !== 'undefined' ? t('video.playbackStarted') : 'Video playback started!';
+                this.showMessage(message, 'success');
                 this.updateStatus();
             } else {
-                this.showMessage(result.message || 'Failed to start video', 'error');
+                const message = typeof t !== 'undefined' ? t('video.failedToStart') : 'Failed to start video';
+                this.showMessage(result.message || message, 'error');
             }
         } catch (error) {
             console.error('Error starting video:', error);
-            this.showMessage('Failed to start video', 'error');
+            const message = typeof t !== 'undefined' ? t('video.failedToStart') : 'Failed to start video';
+            this.showMessage(message, 'error');
         }
     },
 
@@ -40,14 +43,17 @@ const VideoManager = {
             const result = await response.json();
             
             if (result.success) {
-                this.showMessage('Video playback stopped', 'success');
+                const message = typeof t !== 'undefined' ? t('video.playbackStopped') : 'Video playback stopped';
+                this.showMessage(message, 'success');
                 this.updateStatus();
             } else {
-                this.showMessage(result.message || 'Failed to stop video', 'error');
+                const message = typeof t !== 'undefined' ? t('video.failedToStop') : 'Failed to stop video';
+                this.showMessage(result.message || message, 'error');
             }
         } catch (error) {
             console.error('Error stopping video:', error);
-            this.showMessage('Failed to stop video', 'error');
+            const message = typeof t !== 'undefined' ? t('video.failedToStop') : 'Failed to stop video';
+            this.showMessage(message, 'error');
         }
     },
 
@@ -65,14 +71,17 @@ const VideoManager = {
             const result = await response.json();
             
             if (result.success) {
-                this.showMessage('Video started!', 'success');
+                const message = typeof t !== 'undefined' ? t('video.videoStarted') : 'Video started!';
+                this.showMessage(message, 'success');
                 this.updateStatus();
             } else {
-                this.showMessage(result.message || 'Failed to start video', 'error');
+                const message = typeof t !== 'undefined' ? t('video.failedToStart') : 'Failed to start video';
+                this.showMessage(result.message || message, 'error');
             }
         } catch (error) {
             console.error('Error starting specific video:', error);
-            this.showMessage('Failed to start video', 'error');
+            const message = typeof t !== 'undefined' ? t('video.failedToStart') : 'Failed to start video';
+            this.showMessage(message, 'error');
         }
     },
 
@@ -119,50 +128,31 @@ const VideoManager = {
     },
 
     /**
-     * Show status message
+     * Show status message using unified notification system
      * @param {string} message - Message to display
      * @param {string} type - Message type ('success', 'error', 'warning', 'info')
      */
     showMessage(message, type = 'info') {
-        // Try to find the specific control status message first
-        let messageElement = document.getElementById('control-status-message');
-        
-        // Fallback to global status message
-        if (!messageElement) {
-            messageElement = document.getElementById('status-message');
+        // Use unified notification system if available
+        if (typeof NotificationSystem !== 'undefined') {
+            return NotificationSystem.show(message, type, 4000, 'control-status-message');
         }
+        
+        // Fallback to legacy method if NotificationSystem not available
+        console.log(`${type.toUpperCase()}: ${message}`);
+        
+        // Try to find a status element anyway
+        const messageElement = document.getElementById('control-status-message') || 
+                              document.getElementById('status-message');
         
         if (messageElement) {
             messageElement.textContent = message;
             messageElement.className = `status-message ${type}`;
             messageElement.style.display = 'block';
             
-            // Apply styles based on type
-            switch(type) {
-                case 'success':
-                    messageElement.style.backgroundColor = 'var(--success-color)';
-                    messageElement.style.color = 'white';
-                    break;
-                case 'error':
-                    messageElement.style.backgroundColor = 'var(--error-color)';
-                    messageElement.style.color = 'white';
-                    break;
-                case 'warning':
-                    messageElement.style.backgroundColor = 'var(--warning-color)';
-                    messageElement.style.color = 'white';
-                    break;
-                default:
-                    messageElement.style.backgroundColor = 'var(--primary-color)';
-                    messageElement.style.color = 'white';
-            }
-            
-            // Hide after 3 seconds
             setTimeout(() => {
                 messageElement.style.display = 'none';
-            }, 3000);
-        } else {
-            // Fallback to console if no status element found
-            console.log(`${type.toUpperCase()}: ${message}`);
+            }, 4000);
         }
     },
 
@@ -201,13 +191,16 @@ const VideoManager = {
                 if (typeof SPA !== 'undefined' && SPA.currentTab === 'playlist' && typeof Library !== 'undefined') {
                     Library.refreshLibrary();
                 }
-                this.showMessage('Video deleted successfully', 'success');
+                const message = typeof t !== 'undefined' ? t('video.deletedSuccessfully') : 'Video deleted successfully';
+                this.showMessage(message, 'success');
             } else {
-                this.showMessage(result.message || 'Failed to delete video', 'error');
+                const message = typeof t !== 'undefined' ? t('video.failedToDelete') : 'Failed to delete video';
+                this.showMessage(result.message || message, 'error');
             }
         } catch (error) {
             console.error('Error deleting video:', error);
-            this.showMessage('Failed to delete video', 'error');
+            const message = typeof t !== 'undefined' ? t('video.failedToDelete') : 'Failed to delete video';
+            this.showMessage(message, 'error');
         }
     },
 
@@ -227,16 +220,24 @@ const VideoManager = {
                 endOffset = duration - endTime;
             }
 
+            const titleText = typeof t !== 'undefined' ? t('video.editVideoSettings') : 'Edit Video Settings';
+            const videoTitleText = typeof t !== 'undefined' ? t('video.videoTitle') : 'Video Title';
+            const videoTitlePlaceholder = typeof t !== 'undefined' ? t('video.enterVideoTitle') : 'Enter video title';
+            const startTimeText = typeof t !== 'undefined' ? t('video.startTimeSeconds') : 'Start Time (seconds)';
+            const endTimeOffsetText = typeof t !== 'undefined' ? t('video.endTimeOffset') : 'End Time Offset (seconds from end)';
+            const saveChangesText = typeof t !== 'undefined' ? t('video.saveChanges') : 'Save Changes';
+            const cancelText = typeof t !== 'undefined' ? t('modal.cancel') : 'Cancel';
+
             Modal.form({
-                title: 'Edit Video Settings',
+                title: titleText,
                 fields: [
                     { name: 'path', type: 'hidden', value: path },
-                    { name: 'title', type: 'text', label: 'Video Title', value: title || '', placeholder: 'Enter video title' },
-                    { name: 'start_time', type: 'number', label: 'Start Time (seconds)', value: startTime || 0, placeholder: '0' },
-                    { name: 'end_time_offset', type: 'number', label: 'End Time Offset (seconds from end)', value: endOffset, placeholder: '0' }
+                    { name: 'title', type: 'text', label: videoTitleText, value: title || '', placeholder: videoTitlePlaceholder },
+                    { name: 'start_time', type: 'number', label: startTimeText, value: startTime || 0, placeholder: '0' },
+                    { name: 'end_time_offset', type: 'number', label: endTimeOffsetText, value: endOffset, placeholder: '0' }
                 ],
-                submitText: 'Save Changes',
-                cancelText: 'Cancel',
+                submitText: saveChangesText,
+                cancelText: cancelText,
                 onSubmit: async (data) => {
                     try {
                         const response = await fetch('/api/video/update', {
@@ -247,19 +248,22 @@ const VideoManager = {
                         
                         const result = await response.json();
                         if (result.success) {
-                            VideoManager.showMessage('Video settings updated successfully!', 'success');
+                            const successMessage = typeof t !== 'undefined' ? t('video.settingsUpdated') : 'Video settings updated successfully!';
+                            VideoManager.showMessage(successMessage, 'success');
                             // Refresh the library if we're on the playlist tab
                             if (typeof SPA !== 'undefined' && SPA.currentTab === 'playlist' && typeof Library !== 'undefined') {
                                 Library.refreshLibrary();
                             }
                             return true; // Close modal
                         } else {
-                            VideoManager.showMessage(result.error || 'Failed to update video settings', 'error');
+                            const errorMessage = typeof t !== 'undefined' ? t('video.failedToUpdateSettings') : 'Failed to update video settings';
+                            VideoManager.showMessage(result.error || errorMessage, 'error');
                             return false; // Keep modal open
                         }
                     } catch (error) {
                         console.error('Error updating video:', error);
-                        VideoManager.showMessage('Error updating video settings', 'error');
+                        const errorMessage = typeof t !== 'undefined' ? t('video.errorUpdatingSettings') : 'Error updating video settings';
+                        VideoManager.showMessage(errorMessage, 'error');
                         return false; // Keep modal open
                     }
                 },
@@ -269,7 +273,8 @@ const VideoManager = {
             });
         } else {
             console.log('Modal system not available');
-            this.showMessage('Edit functionality not available', 'error');
+            const message = typeof t !== 'undefined' ? t('video.editNotAvailable') : 'Edit functionality not available';
+            this.showMessage(message, 'error');
         }
     },
 
@@ -279,24 +284,42 @@ const VideoManager = {
      * @param {string} title - Video title
      */
     showDeleteModal(path, title) {
+        console.log('showDeleteModal called for:', path, title);
+        console.log('Modal available?', typeof Modal !== 'undefined');
+        
         if (typeof Modal !== 'undefined') {
+            console.log('Using Modal system for delete confirmation');
+            const deleteTitle = typeof t !== 'undefined' ? t('video.deleteVideo') : 'Delete Video';
+            const deleteMessage = typeof t !== 'undefined' ? 
+                t('video.deleteConfirmation', { title: title }) : 
+                `Are you sure you want to delete "${title}"? This action cannot be undone.`;
+            const deleteText = typeof t !== 'undefined' ? t('modal.delete') : 'Delete';
+            const cancelText = typeof t !== 'undefined' ? t('modal.cancel') : 'Cancel';
+
             Modal.confirm({
-                title: 'Delete Video',
-                message: `Are you sure you want to delete "${title}"? This action cannot be undone.`,
-                confirmText: 'Delete',
-                cancelText: 'Cancel',
+                title: deleteTitle,
+                message: deleteMessage,
+                confirmText: deleteText,
+                cancelText: cancelText,
                 type: 'danger',
                 onConfirm: () => {
+                    console.log('Delete confirmed via modal');
                     this.deleteVideo(path);
                 },
                 onCancel: () => {
-                    console.log('Delete cancelled');
+                    console.log('Delete cancelled via modal');
                 }
             });
         } else {
-            console.log('Modal system not available');
-            if (confirm(`Are you sure you want to delete "${title}"?`)) {
+            console.log('Modal system not available, using fallback confirm()');
+            const confirmMessage = typeof t !== 'undefined' ? 
+                t('video.deleteConfirmation', { title: title }) : 
+                `Are you sure you want to delete "${title}"?`;
+            if (confirm(confirmMessage)) {
+                console.log('Delete confirmed via fallback');
                 this.deleteVideo(path);
+            } else {
+                console.log('Delete cancelled via fallback');
             }
         }
     },

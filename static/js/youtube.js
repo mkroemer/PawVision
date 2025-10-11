@@ -14,17 +14,23 @@ const YouTube = {
      */
     downloadVideo(videoPath, quality = '720p') {
         if (typeof Modal !== 'undefined') {
+            const title = typeof t !== 'undefined' ? t('youtube.downloadVideo') : '📥 Download Video';
+            const message = typeof t !== 'undefined' ? t('youtube.downloadConfirmation') : 'Download this YouTube video for offline playback? This may take several minutes depending on video length and quality.';
+            const confirmText = typeof t !== 'undefined' ? t('upload.download') : 'Download';
+            const cancelText = typeof t !== 'undefined' ? t('modal.cancel') : 'Cancel';
+
             Modal.confirm({
-                title: '📥 Download Video',
-                message: 'Download this YouTube video for offline playback? This may take several minutes depending on video length and quality.',
-                confirmText: 'Download',
-                cancelText: 'Cancel',
+                title: title,
+                message: message,
+                confirmText: confirmText,
+                cancelText: cancelText,
                 onConfirm: () => this.startDownload(videoPath, quality),
                 onCancel: () => console.log('Download cancelled')
             });
         } else {
             // Fallback if modals not available
-            if (confirm('Download this YouTube video for offline playback? This may take several minutes depending on video length and quality.')) {
+            const message = typeof t !== 'undefined' ? t('youtube.downloadConfirmation') : 'Download this YouTube video for offline playback? This may take several minutes depending on video length and quality.';
+            if (confirm(message)) {
                 this.startDownload(videoPath, quality);
             }
         }
@@ -39,20 +45,25 @@ const YouTube = {
         // Show progress modal
         let progressModalId = null;
         if (typeof Modal !== 'undefined') {
+            const title = typeof t !== 'undefined' ? t('youtube.downloadingVideo') : '📥 Downloading Video';
+            const startingMessage = typeof t !== 'undefined' ? t('youtube.startingDownload') : 'Starting download...';
+            const preparingMessage = typeof t !== 'undefined' ? t('youtube.startingDownload') : 'Preparing download...';
+            const cancelText = typeof t !== 'undefined' ? t('modal.cancel') : 'Cancel';
+
             progressModalId = Modal.show({
-                title: '📥 Downloading Video',
+                title: title,
                 content: `
                     <div class="download-progress">
-                        <div class="progress-message">Starting download...</div>
+                        <div class="progress-message">${startingMessage}</div>
                         <div class="progress-bar">
                             <div class="progress-fill" style="width: 0%"></div>
                         </div>
-                        <div class="progress-text">Preparing download...</div>
+                        <div class="progress-text">${preparingMessage}</div>
                     </div>
                 `,
                 closable: false,
                 buttons: [{
-                    text: 'Cancel',
+                    text: cancelText,
                     class: 'btn-secondary',
                     onclick: () => {
                         Modal.hide(progressModalId);
@@ -78,33 +89,48 @@ const YouTube = {
                     // Update progress modal
                     const progressMessage = document.querySelector(`#${progressModalId} .progress-message`);
                     const progressText = document.querySelector(`#${progressModalId} .progress-text`);
-                    if (progressMessage) progressMessage.textContent = 'Download in progress...';
-                    if (progressText) progressText.textContent = 'This may take several minutes';
+                    const inProgressMessage = typeof t !== 'undefined' ? t('youtube.downloadInProgress') : 'Download in progress...';
+                    const timeMessage = typeof t !== 'undefined' ? t('youtube.downloadMayTakeTime') : 'This may take several minutes';
+                    
+                    if (progressMessage) progressMessage.textContent = inProgressMessage;
+                    if (progressText) progressText.textContent = timeMessage;
                     
                     // Auto-close after 3 seconds with success message
                     setTimeout(() => {
                         Modal.hide(progressModalId);
-                        if (typeof VideoManager !== 'undefined') {
-                            VideoManager.showMessage('Download started! Check back in a few minutes.', 'success');
+                        const successMessage = typeof t !== 'undefined' ? t('youtube.downloadStarted') : 'Download started! Check back in a few minutes.';
+                        if (typeof NotificationSystem !== 'undefined') {
+                            NotificationSystem.show(successMessage, 'success');
+                        } else if (typeof VideoManager !== 'undefined') {
+                            VideoManager.showMessage(successMessage, 'success');
                         }
                     }, 3000);
                 } else {
-                    if (typeof VideoManager !== 'undefined') {
-                        VideoManager.showMessage('Download started! Check back in a few minutes.', 'success');
+                    const successMessage = typeof t !== 'undefined' ? t('youtube.downloadStarted') : 'Download started! Check back in a few minutes.';
+                    if (typeof NotificationSystem !== 'undefined') {
+                        NotificationSystem.show(successMessage, 'success');
+                    } else if (typeof VideoManager !== 'undefined') {
+                        VideoManager.showMessage(successMessage, 'success');
                     }
                 }
             } else {
                 if (progressModalId) Modal.hide(progressModalId);
-                if (typeof VideoManager !== 'undefined') {
-                    VideoManager.showMessage(data.error || 'Failed to start download', 'error');
+                const errorMsg = data.error || (typeof t !== 'undefined' ? t('youtube.failedToStartDownload') : 'Failed to start download');
+                if (typeof NotificationSystem !== 'undefined') {
+                    NotificationSystem.show(errorMsg, 'error');
+                } else if (typeof VideoManager !== 'undefined') {
+                    VideoManager.showMessage(errorMsg, 'error');
                 }
             }
         })
         .catch(error => {
             console.error('Error:', error);
             if (progressModalId) Modal.hide(progressModalId);
-            if (typeof VideoManager !== 'undefined') {
-                VideoManager.showMessage('Error starting download', 'error');
+            const errorMsg = typeof t !== 'undefined' ? t('youtube.errorStartingDownload') : 'Error starting download';
+            if (typeof NotificationSystem !== 'undefined') {
+                NotificationSystem.show(errorMsg, 'error');
+            } else if (typeof VideoManager !== 'undefined') {
+                VideoManager.showMessage(errorMsg, 'error');
             }
         });
     },
@@ -128,7 +154,8 @@ const YouTube = {
 
         // Show loading state
         if (validationDiv) {
-            validationDiv.innerHTML = '<span style="color: #666;">⏳ Validating URL...</span>';
+            const validatingMessage = typeof t !== 'undefined' ? t('youtube.validatingUrl') : '⏳ Validating URL...';
+            validationDiv.innerHTML = `<span style="color: #666;">${validatingMessage}</span>`;
             validationDiv.style.display = 'block';
         }
 
@@ -145,7 +172,10 @@ const YouTube = {
             .then(data => {
                 if (data.valid) {
                     if (validationDiv) {
-                        validationDiv.innerHTML = `<span style="color: #2BA8A0;">✓ Valid: ${data.title || 'YouTube Video'}</span>`;
+                        const validMessage = typeof t !== 'undefined' ? 
+                            t('youtube.validYoutubeVideo', { title: data.title || 'YouTube Video' }) : 
+                            `✓ Valid: ${data.title || 'YouTube Video'}`;
+                        validationDiv.innerHTML = `<span style="color: #2BA8A0;">${validMessage}</span>`;
                     }
                     
                     // Auto-populate title in advanced form
@@ -161,7 +191,9 @@ const YouTube = {
                     }
                 } else {
                     if (validationDiv) {
-                        validationDiv.innerHTML = `<span style="color: #ee5a24;">✗ ${data.error || 'Invalid YouTube URL'}</span>`;
+                        const invalidMessage = typeof t !== 'undefined' ? t('youtube.invalidYoutubeUrl') : 'Invalid YouTube URL';
+                        const errorMsg = data.error || invalidMessage;
+                        validationDiv.innerHTML = `<span style="color: #ee5a24;">✗ ${errorMsg}</span>`;
                     }
                     
                     // Disable the quick add button
@@ -174,7 +206,8 @@ const YouTube = {
             .catch(error => {
                 console.error('Validation error:', error);
                 if (validationDiv) {
-                    validationDiv.innerHTML = '<span style="color: #ee5a24;">✗ Validation failed</span>';
+                    const validationFailedMessage = typeof t !== 'undefined' ? t('youtube.validationFailed') : '✗ Validation failed';
+                    validationDiv.innerHTML = `<span style="color: #ee5a24;">${validationFailedMessage}</span>`;
                 }
             });
         }, 1000); // 1 second debounce
@@ -190,7 +223,8 @@ const YouTube = {
         const url = document.getElementById('youtube-url-quick').value;
         
         if (!url) {
-            this.showMessage('Please enter a YouTube URL', true);
+            const message = typeof t !== 'undefined' ? t('youtube.enterYoutubeUrl') : 'Please enter a YouTube URL';
+            this.showMessage(message, true);
             return;
         }
 
@@ -214,7 +248,8 @@ const YouTube = {
         .then(response => response.json())
         .then(data => {
             if (data.status === 'success' || data.message) {
-                this.showMessage(data.message || 'Video added successfully', false);
+                const successMessage = data.message || (typeof t !== 'undefined' ? t('youtube.videoAddedSuccessfully') : 'Video added successfully');
+                this.showMessage(successMessage, false);
                 document.getElementById('youtube-url-quick').value = '';
                 const validationDiv = document.getElementById('url-validation');
                 if (validationDiv) {
@@ -230,12 +265,14 @@ const YouTube = {
                     window.location.reload();
                 }, 1500);
             } else {
-                this.showMessage(data.error || 'Failed to add video', true);
+                const errorMessage = data.error || (typeof t !== 'undefined' ? t('youtube.failedToAddVideo') : 'Failed to add video');
+                this.showMessage(errorMessage, true);
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            this.showMessage('Error adding video', true);
+            const errorMessage = typeof t !== 'undefined' ? t('youtube.errorAddingVideo') : 'Error adding video';
+            this.showMessage(errorMessage, true);
         });
     },
 
@@ -251,7 +288,8 @@ const YouTube = {
         // Get URL from quick input since advanced form doesn't have URL field
         const quickUrl = document.getElementById('youtube-url-quick');
         if (!quickUrl || !quickUrl.value) {
-            this.showMessage('Please enter a YouTube URL first', true);
+            const errorMessage = typeof t !== 'undefined' ? t('youtube.pleaseEnterUrl') : 'Please enter a YouTube URL first';
+            this.showMessage(errorMessage, true);
             return;
         }
         
@@ -276,7 +314,8 @@ const YouTube = {
         .then(response => response.json())
         .then(data => {
             if (data.status === 'success' || data.message) {
-                this.showMessage(data.message || 'Video added successfully', false);
+                const successMessage = data.message || (typeof t !== 'undefined' ? t('youtube.videoAddedSuccessfully') : 'Video added successfully');
+                this.showMessage(successMessage, false);
                 form.reset();
                 // Hide advanced options
                 const advancedDiv = document.getElementById('advanced-options');
@@ -294,40 +333,15 @@ const YouTube = {
                     window.location.reload();
                 }, 1500);
             } else {
-                this.showMessage(data.error || 'Failed to add video', true);
+                const errorMessage = data.error || (typeof t !== 'undefined' ? t('youtube.failedToAddVideo') : 'Failed to add video');
+                this.showMessage(errorMessage, true);
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            this.showMessage('Error adding video', true);
+            const errorMessage = typeof t !== 'undefined' ? t('youtube.errorAddingVideo') : 'Error adding video';
+            this.showMessage(errorMessage, true);
         });
-    },
-
-    /**
-     * Toggle advanced options
-     * @param {Event} event - Click event
-     */
-    toggleAdvancedOptions(event) {
-        const advancedDiv = document.getElementById('advanced-options');
-        const toggleButton = event.target; // Use the actual button that was clicked
-        
-        if (advancedDiv.style.display === 'none' || advancedDiv.style.display === '') {
-            advancedDiv.style.display = 'block';
-            toggleButton.textContent = '⚙️ Hide Advanced';
-            
-            // Copy URL from quick input to advanced form if needed
-            const quickUrl = document.getElementById('youtube-url-quick');
-            if (quickUrl && quickUrl.value) {
-                // URL is already validated via the quick input
-                const titleInput = document.getElementById('youtube-title');
-                if (titleInput && !titleInput.value) {
-                    // Title may already be populated from validation
-                }
-            }
-        } else {
-            advancedDiv.style.display = 'none';
-            toggleButton.textContent = '⚙️ Advanced';
-        }
     },
 
     /**
@@ -341,11 +355,25 @@ const YouTube = {
     },
 
     /**
-     * Show YouTube-specific message
+     * Show YouTube-specific message using unified notification system
      * @param {string} message - Message to show
-     * @param {boolean} isError - Whether this is an error
+     * @param {boolean} isError - Whether this is an error (legacy parameter)
+     * @param {string} type - Message type ('success', 'error', 'warning', 'info')
      */
-    showMessage(message, isError) {
+    showMessage(message, isError = false, type = null) {
+        // Determine message type
+        let msgType = type;
+        if (!msgType) {
+            msgType = isError ? 'error' : 'success';
+        }
+        
+        // Use unified notification system if available
+        if (typeof NotificationSystem !== 'undefined') {
+            NotificationSystem.show(message, msgType, 4000);
+            return;
+        }
+        
+        // Fallback to local YouTube message area
         const messageDiv = document.getElementById('youtube-message');
         if (messageDiv) {
             messageDiv.textContent = message;
@@ -354,7 +382,10 @@ const YouTube = {
             
             setTimeout(() => {
                 messageDiv.style.display = 'none';
-            }, 3000);
+            }, 4000);
+        } else {
+            // Final fallback to console
+            console.log(`YouTube ${msgType.toUpperCase()}: ${message}`);
         }
     },
 
@@ -393,12 +424,12 @@ const YouTube = {
         const toggleBtn = document.getElementById('advanced-toggle-btn');
         
         if (advancedForm && toggleBtn) {
-            if (advancedForm.style.display === 'none' || !advancedForm.style.display) {
-                advancedForm.style.display = 'block';
-                toggleBtn.textContent = '▼ Hide Advanced Options';
+            if (advancedForm.classList.contains('hidden')) {
+                advancedForm.classList.remove('hidden');
+                toggleBtn.textContent = '▲ Hide Advanced';
             } else {
-                advancedForm.style.display = 'none';
-                toggleBtn.textContent = '⚙️ Advanced Options';
+                advancedForm.classList.add('hidden');
+                toggleBtn.textContent = '⚙️ Advanced';
             }
         }
     },

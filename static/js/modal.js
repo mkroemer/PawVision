@@ -10,6 +10,46 @@ const Modal = {
     modalCounter: 0,
 
     /**
+     * Test method to create a simple modal quickly
+     */
+    test() {
+        console.log('Creating test modal...');
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        `;
+        
+        const content = document.createElement('div');
+        content.style.cssText = `
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        `;
+        content.innerHTML = `
+            <h3>Test Modal</h3>
+            <p>This is a test modal to verify the modal system works.</p>
+            <button onclick="document.body.removeChild(this.closest('.modal-test'))" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">Close</button>
+        `;
+        
+        modal.appendChild(content);
+        modal.className = 'modal-test';
+        document.body.appendChild(modal);
+        console.log('Test modal added to DOM');
+        return modal;
+    },
+
+    /**
      * Create and show a modal
      * @param {Object} config - Modal configuration
      * @returns {string} Modal ID for future reference
@@ -19,12 +59,12 @@ const Modal = {
             id = `modal-${++this.modalCounter}`,
             title = '',
             content = '',
-            type = 'info', // 'info', 'confirm', 'alert', 'form', 'custom'
-            size = 'medium', // 'small', 'medium', 'large', 'fullscreen'
+            type = 'info',
+            size = 'medium',
             buttons = [],
             closable = true,
-            backdrop = true, // Close on backdrop click
-            keyboard = true, // Close on ESC key
+            backdrop = true,
+            keyboard = true,
             onShow = null,
             onHide = null,
             className = ''
@@ -49,11 +89,9 @@ const Modal = {
             onHide
         });
 
-        // Show modal with animation
-        requestAnimationFrame(() => {
-            modal.classList.add('modal-show');
-            document.body.classList.add('modal-open');
-        });
+        // Show modal immediately
+        modal.classList.add('modal-show');
+        document.body.classList.add('modal-open');
 
         // Setup event listeners
         this.setupModalEvents(id);
@@ -181,7 +219,7 @@ const Modal = {
         const modal = modalInfo.element;
         const { backdrop, keyboard } = modalInfo.config;
 
-        // Backdrop click
+        // Backdrop click handler
         if (backdrop) {
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) {
@@ -190,7 +228,7 @@ const Modal = {
             });
         }
 
-        // Keyboard events
+        // Keyboard handler
         if (keyboard) {
             const keyHandler = (e) => {
                 if (e.key === 'Escape') {
@@ -216,7 +254,7 @@ const Modal = {
             type = 'warning'
         } = options;
 
-        return this.show({
+        const modalId = this.show({
             title,
             content: `<p>${message}</p>`,
             type,
@@ -239,6 +277,8 @@ const Modal = {
                 }
             ]
         });
+        
+        return modalId;
     },
 
     /**
@@ -288,15 +328,13 @@ const Modal = {
         fields.forEach(field => {
             formHTML += `
                 <div class="form-group">
-                    <label for="${field.name}">${field.label}</label>
-                    <input 
-                        type="${field.type || 'text'}" 
-                        id="${field.name}" 
-                        name="${field.name}" 
-                        value="${field.value || ''}"
-                        ${field.required ? 'required' : ''}
-                        ${field.placeholder ? `placeholder="${field.placeholder}"` : ''}
-                    />
+                    <label for="${field.name}">${field.label || field.name}</label>
+                    <input type="${field.type || 'text'}" 
+                           name="${field.name}" 
+                           id="${field.name}"
+                           value="${field.value || ''}" 
+                           placeholder="${field.placeholder || ''}"
+                           ${field.required ? 'required' : ''}>
                 </div>
             `;
         });
@@ -318,38 +356,22 @@ const Modal = {
                 {
                     text: submitText,
                     className: 'btn-primary',
-                    onClick: (id) => {
+                    onClick: async (id) => {
                         const form = document.querySelector(`#${id} .modal-form`);
                         const formData = new FormData(form);
                         const data = Object.fromEntries(formData.entries());
                         
                         if (onSubmit) {
-                            const result = onSubmit(data);
-                            return result !== false; // Close modal unless explicitly prevented
+                            const result = await onSubmit(data);
+                            return result; // If false, keep modal open
                         }
                         return true;
                     }
                 }
             ]
         });
-    },
-
-    /**
-     * Hide all modals
-     */
-    hideAll() {
-        Array.from(this.activeModals.keys()).forEach(id => this.hide(id));
-    },
-
-    /**
-     * Get active modal count
-     */
-    count() {
-        return this.activeModals.size;
     }
 };
 
-// Export for module usage
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = Modal;
-}
+// Global alias for convenience
+window.Modal = Modal;

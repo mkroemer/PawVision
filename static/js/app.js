@@ -10,7 +10,7 @@ const PawVisionApp = {
     /**
      * Initialize the application
      */
-    init() {
+    async init() {
         // Prevent double initialization
         if (this.initialized) {
             console.log('⚠️ PawVision already initialized, skipping...');
@@ -18,6 +18,11 @@ const PawVisionApp = {
         }
         
         console.log('🐾 PawVision JavaScript modules loaded');
+        
+        // Initialize i18n system first
+        if (typeof I18n !== 'undefined') {
+            await I18n.init('en'); // Default to English
+        }
         
         // Initialize all modules in the correct order
         this.initModules();
@@ -74,22 +79,42 @@ const PawVisionApp = {
         // Global error handler
         window.addEventListener('error', (event) => {
             console.error('Global error:', event.error);
-            showStatus('An unexpected error occurred', true);
+            if (typeof NotificationSystem !== 'undefined') {
+                const message = typeof t !== 'undefined' ? t('app.error') : 'An unexpected error occurred';
+                NotificationSystem.show(message, 'error');
+            } else {
+                showStatus('An unexpected error occurred', true);
+            }
         });
 
         // Handle unhandled promise rejections
         window.addEventListener('unhandledrejection', (event) => {
             console.error('Unhandled promise rejection:', event.reason);
-            showStatus('An unexpected error occurred', true);
+            if (typeof NotificationSystem !== 'undefined') {
+                const message = typeof t !== 'undefined' ? t('app.error') : 'An unexpected error occurred';
+                NotificationSystem.show(message, 'error');
+            } else {
+                showStatus('An unexpected error occurred', true);
+            }
         });
 
         // Handle offline/online status
         window.addEventListener('offline', () => {
-            showStatus('Connection lost - some features may not work', true);
+            if (typeof NotificationSystem !== 'undefined') {
+                const message = typeof t !== 'undefined' ? t('app.connectionLost') : 'Connection lost - some features may not work';
+                NotificationSystem.show(message, 'warning', 6000);
+            } else {
+                showStatus('Connection lost - some features may not work', true);
+            }
         });
 
         window.addEventListener('online', () => {
-            showStatus('Connection restored', false);
+            if (typeof NotificationSystem !== 'undefined') {
+                const message = typeof t !== 'undefined' ? t('app.connectionRestored') : 'Connection restored';
+                NotificationSystem.show(message, 'success');
+            } else {
+                showStatus('Connection restored', false);
+            }
         });
 
         // Keyboard shortcuts
@@ -105,12 +130,20 @@ const PawVisionApp = {
 
             // Escape to close any open modals
             if (event.key === 'Escape') {
-                // Let individual modal handlers deal with this
-                // This is just a fallback
+                // Close any open modals
+                if (typeof Modal !== 'undefined' && Modal.activeModals && Modal.activeModals.size > 0) {
+                    // Let Modal system handle ESC key
+                    return;
+                }
+                
+                // Fallback for any remaining modals
                 const openModals = document.querySelectorAll('.modal[style*="block"], .general-modal[style*="block"], .delete-modal[style*="block"]');
                 openModals.forEach(modal => {
                     modal.style.display = 'none';
                 });
+                
+                // Clean up modal body class
+                document.body.classList.remove('modal-open');
             }
         });
     },
@@ -119,21 +152,26 @@ const PawVisionApp = {
      * Handle initial page state
      */
     handleInitialState() {
-        // Handle URL hash for tab navigation
-        if (typeof Navigation !== 'undefined') {
-            Navigation.handleUrlHash();
-        }
-
-        // Load statistics if on statistics tab
+        // SPA navigation system handles URL hash automatically
         const hash = window.location.hash.substring(1);
+        
+        // Load statistics if on statistics tab
         if (hash === 'statistics' && typeof Statistics !== 'undefined') {
-            Statistics.loadStatistics();
+            // Small delay to ensure tab is properly loaded
+            setTimeout(() => {
+                Statistics.initializeTab();
+            }, 100);
         }
 
         // Show welcome message on first visit
         if (!localStorage.getItem('pawvision_visited')) {
             setTimeout(() => {
-                showStatus('Welcome to PawVision! 🐾', false);
+                if (typeof NotificationSystem !== 'undefined') {
+                    const message = typeof t !== 'undefined' ? t('app.welcome') : 'Welcome to PawVision! 🐾';
+                    NotificationSystem.show(message, 'info', 5000);
+                } else {
+                    showStatus('Welcome to PawVision! 🐾', false);
+                }
                 localStorage.setItem('pawvision_visited', 'true');
             }, 1000);
         }
@@ -178,13 +216,6 @@ document.addEventListener('DOMContentLoaded', function() {
             PawVisionApp.init();
         }
     }, 100);
-});
-
-// Handle hash changes for navigation
-window.addEventListener('hashchange', function() {
-    if (typeof Navigation !== 'undefined') {
-        Navigation.handleUrlHash();
-    }
 });
 
 // Export for module usage

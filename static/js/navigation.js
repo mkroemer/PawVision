@@ -111,11 +111,7 @@ const SPA = {
      */
     handlePopState(event) {
         if (event.state && event.state.tab) {
-            // Find and click the appropriate tab
-            const tabButton = document.querySelector(`.header-link[data-tab="${event.state.tab}"]`);
-            if (tabButton) {
-                this.switchTab({target: tabButton}, event.state.tab);
-            }
+            this.switchTab(null, event.state.tab);
         }
     },
     
@@ -124,12 +120,22 @@ const SPA = {
      */
     initFromHash() {
         const hash = window.location.hash.slice(1); // Remove #
-        if (hash && ['control', 'playlist', 'statistics', 'config'].includes(hash)) {
-            const tabButton = document.querySelector(`.header-link[data-tab="${hash}"]`);
-            if (tabButton) {
-                this.switchTab({target: tabButton}, hash);
-            }
+        const validTabs = ['control', 'playlist', 'statistics', 'config'];
+        
+        if (hash && validTabs.includes(hash)) {
+            this.switchTab(null, hash);
+        } else if (hash) {
+            // Invalid hash, redirect to default
+            console.warn(`Invalid tab hash: ${hash}, redirecting to control`);
+            window.location.hash = 'control';
         }
+    },
+    
+    /**
+     * Handle URL hash changes
+     */
+    handleHashChange() {
+        this.initFromHash();
     },
     
     /**
@@ -138,6 +144,9 @@ const SPA = {
     init() {
         // Handle browser navigation
         window.addEventListener('popstate', (event) => this.handlePopState(event));
+        
+        // Handle hash changes
+        window.addEventListener('hashchange', () => this.handleHashChange());
         
         // Initialize from URL hash
         this.initFromHash();
@@ -154,22 +163,7 @@ const SPA = {
     }
 };
 
-// Legacy Navigation object for backwards compatibility
-const Navigation = {
-    openTab: function(event, tabName) {
-        SPA.switchTab(event, tabName);
-    },
-    init: function() {
-        SPA.init();
-    }
-};
-
-// Global function for backwards compatibility
-function openTab(event, tabName) {
-    SPA.switchTab(event, tabName);
-}
-
 // Export for module usage
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { SPA, Navigation };
+    module.exports = { SPA };
 }
