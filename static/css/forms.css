@@ -44,7 +44,7 @@ input[type="file"]:focus,
 input[type="password"]:focus,
 textarea:focus {
     outline: none;
-    border-color: var(--primary);
+    border-color: var(--primary-color);
     box-shadow: 0 0 0 3px var(--primary-light);
     transform: translateY(-1px);
 }
@@ -63,7 +63,7 @@ textarea:disabled {
 input[type="checkbox"] {
     width: 18px;
     height: 18px;
-    accent-color: var(--primary);
+    accent-color: var(--primary-color);
     margin-right: 8px;
 }
 
@@ -121,7 +121,7 @@ input[type="checkbox"] {
 }
 
 .youtube-form h3 {
-    color: var(--primary);
+    color: var(--primary-color);
     margin-bottom: 15px;
     display: flex;
     align-items: center;
@@ -170,7 +170,7 @@ select {
 /* Enhanced focus states for select */
 select:focus {
     outline: none;
-    border-color: var(--primary);
+    border-color: var(--primary-color);
     box-shadow: 0 0 0 3px var(--primary-light);
     background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ff914d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
 }
@@ -242,7 +242,7 @@ select option {
 
 #youtubeMessage.success {
     background-color: var(--secondary-light);
-    color: var(--secondary);
+    color: var(--secondary-color);
     border: 1px solid var(--secondary-shadow);
 }
 
@@ -263,7 +263,7 @@ input[type="file"] {
 }
 
 input[type="file"]:hover {
-    border-color: var(--primary);
+    border-color: var(--primary-color);
     background: var(--primary-light);
 }
 

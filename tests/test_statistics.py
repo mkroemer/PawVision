@@ -6,7 +6,7 @@ from pathlib import Path
 import shutil
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from pawvision.statistics_unified import StatisticsManager
+from pawvision.statistics import StatisticsManager
 
 
 class TestStatisticsManager(unittest.TestCase):
@@ -17,7 +17,9 @@ class TestStatisticsManager(unittest.TestCase):
         self.stats_file = os.path.join(self.temp_dir, "test_stats.json")
         self.stats_db = os.path.join(self.temp_dir, "test_stats.db")
         self.stats_manager = StatisticsManager(
-            self.stats_db, enabled=True, legacy_json_file=self.stats_file
+            stats_file=self.stats_file,
+            db_file=self.stats_db,
+            enabled=True
         )
 
     def tearDown(self):
@@ -45,7 +47,9 @@ class TestStatisticsManager(unittest.TestCase):
         self.stats_manager.record_button_press("play")
         self.stats_manager.record_api_call("play")
         new_manager = StatisticsManager(
-            self.stats_db, enabled=True, legacy_json_file=self.stats_file
+            stats_file=self.stats_file,
+            db_file=self.stats_db,
+            enabled=True
         )
         summary = new_manager.get_summary()
         total_presses = summary.get("button_presses", {}).get("total", 0)
@@ -54,7 +58,11 @@ class TestStatisticsManager(unittest.TestCase):
         self.assertGreaterEqual(total_api_calls, 1)
 
     def test_disabled_statistics(self):
-        disabled_manager = StatisticsManager(self.stats_db, enabled=False)
+        disabled_manager = StatisticsManager(
+            stats_file=self.stats_file,
+            db_file=self.stats_db,
+            enabled=False
+        )
         disabled_manager.record_button_press("play")
         disabled_manager.record_video_play("/test/video.mp4", "button")
         stats = disabled_manager.get_summary()

@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from pawvision.config import ConfigManager, get_video_directories, get_default_port  # noqa: E402
 from pawvision.logging_config import setup_logging, log_system_info  # noqa: E402
-from pawvision.statistics_unified import StatisticsManager  # noqa: E402
+from pawvision.statistics import StatisticsManager  # noqa: E402
 from pawvision.video_player import VideoPlayer  # noqa: E402
 from pawvision.gpio_handler import GPIOManager  # noqa: E402
 from pawvision.web_interface import WebInterface  # noqa: E402
@@ -83,8 +83,8 @@ class PawVisionApp:
             # Initialize statistics
             if self.config.enable_statistics:
                 self.statistics_manager = StatisticsManager(
+                    self.config.statistics_file,
                     self.config.database_path,
-                    self.config.statistics_file,  # For migration purposes
                     self.config.enable_statistics,
                     self.config.button_cooldown_seconds,
                 )
@@ -149,7 +149,7 @@ class PawVisionApp:
                 print(f"📺 Web interface: http://localhost:{port}")
                 print(f"📊 Statistics: {'Enabled' if self.statistics_manager else 'Disabled'}")
                 print(f"🎮 Dev mode: {'Yes' if self.dev_mode else 'No'}")
-                print(f"📁 Videos found: {len(self.video_player.get_all_videos())}")
+                print(f"📁 Videos found: {len(self.video_player.get_all_video_files())}")
                 print("🔧 Dev endpoints:")
                 print(f"   - Button simulation: http://localhost:{port}/dev/button")
                 print(f"   - Clear cache: http://localhost:{port}/dev/cache/clear")
@@ -180,7 +180,7 @@ class PawVisionApp:
                 print(f"📺 Web interface: http://localhost:{port}")
                 print(f"📊 Statistics: {'Enabled' if self.statistics_manager else 'Disabled'}")
                 print(f"🎮 Dev mode: {'Yes' if self.dev_mode else 'No'}")
-                print(f"📁 Videos found: {len(self.video_player.get_all_videos())}")
+                print(f"📁 Videos found: {len(self.video_player.get_all_video_files())}")
 
             return True
 
@@ -261,7 +261,7 @@ class PawVisionApp:
             else:
                 self.logger.warning("YouTube manager not available, cannot add default video")
 
-        except Exception as e:
+        except (OSError, ValueError, AttributeError) as e:
             self.logger.error("Error adding default video: %s", e)
 
     def run_forever(self):
@@ -292,8 +292,7 @@ def detect_dev_mode():
 
     # Check if gpiozero is available
     try:
-        import gpiozero  # noqa: F401
-
+        import gpiozero
         return False  # GPIO library available, likely Pi
     except ImportError:
         return True  # No GPIO library, likely dev environment

@@ -221,17 +221,11 @@ class SecurityValidator:
         errors = []
         sanitized = {}
 
-        # Validate playback duration (backward compatibility with timeout)
+        # Validate playback duration
         if "playback_duration" in form_data:
             valid, error = self.validate_integer_range(form_data["playback_duration"], 1, 180, "Playback duration")
             if valid:
                 sanitized["playback_duration_minutes"] = int(form_data["playback_duration"])
-            else:
-                errors.append(error)
-        elif "timeout" in form_data:  # Backward compatibility
-            valid, error = self.validate_integer_range(form_data["timeout"], 1, 180, "Timeout")
-            if valid:
-                sanitized["playback_duration_minutes"] = int(form_data["timeout"])
             else:
                 errors.append(error)
 
@@ -288,6 +282,7 @@ class SecurityValidator:
         sanitized["second_press_stops"] = "second_press_stops" in form_data
         sanitized["motion_sensor_enabled"] = "motion_sensor_enabled" in form_data
         sanitized["motion_stop_enabled"] = "motion_stop_enabled" in form_data
+        sanitized["night_mode_disable_playback"] = "night_mode_disable_playback" in form_data
 
         # Validate motion stop timeout
         if "motion_stop_timeout" in form_data:

@@ -62,8 +62,8 @@ const SPA = {
         // Update current tab
         this.currentTab = tabName;
         
-        // Update URL without page reload
-        history.pushState({tab: tabName}, '', `#${tabName}`);
+        // Update browser state without changing URL
+        history.pushState({tab: tabName}, '', window.location.pathname);
         
         // Initialize tab-specific functionality
         this.initializeTab(tabName);
@@ -84,7 +84,7 @@ const SPA = {
                 }
                 break;
                 
-            case 'playlist':
+            case 'video-library':
                 // Refresh video library
                 if (typeof Library !== 'undefined') {
                     Library.refreshLibrary();
@@ -116,48 +116,25 @@ const SPA = {
     },
     
     /**
-     * Initialize from URL hash
+     * Initialize to default tab
      */
-    initFromHash() {
-        const hash = window.location.hash.slice(1); // Remove #
-        const validTabs = ['control', 'playlist', 'statistics', 'config'];
-        
-        if (hash && validTabs.includes(hash)) {
-            this.switchTab(null, hash);
-        } else if (hash) {
-            // Invalid hash, redirect to default
-            console.warn(`Invalid tab hash: ${hash}, redirecting to control`);
-            window.location.hash = 'control';
-        }
-    },
-    
-    /**
-     * Handle URL hash changes
-     */
-    handleHashChange() {
-        this.initFromHash();
+    initToDefault() {
+        // Always start with the default tab
+        this.switchTab(null, this.currentTab);
     },
     
     /**
      * Initialize the SPA system
      */
     init() {
-        // Handle browser navigation
+        // Handle browser navigation (back/forward buttons)
         window.addEventListener('popstate', (event) => this.handlePopState(event));
         
-        // Handle hash changes
-        window.addEventListener('hashchange', () => this.handleHashChange());
+        // Initialize to default tab
+        this.initToDefault();
         
-        // Initialize from URL hash
-        this.initFromHash();
-        
-        // Set initial state if no hash
-        if (!window.location.hash) {
-            history.replaceState({tab: this.currentTab}, '', `#${this.currentTab}`);
-        }
-        
-        // Initialize the current tab
-        this.initializeTab(this.currentTab);
+        // Set initial state
+        history.replaceState({tab: this.currentTab}, '', window.location.pathname);
         
         console.log('SPA Navigation system initialized');
     }

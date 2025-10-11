@@ -8,7 +8,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from pawvision.web_interface import WebInterface
 from pawvision.config import ConfigManager
-from pawvision.statistics_unified import StatisticsManager
+from pawvision.statistics import StatisticsManager
 from pawvision.video_player import VideoPlayer
 
 class TestWebInterface(unittest.TestCase):
@@ -20,7 +20,11 @@ class TestWebInterface(unittest.TestCase):
         self.stats_db = os.path.join(self.temp_dir, "test_stats.db")
         self.config_manager = ConfigManager(self.config_file, dev_mode=True)
         self.config = self.config_manager.load_config()
-        self.stats_manager = StatisticsManager(self.stats_db, enabled=True, legacy_json_file=self.stats_file)
+        self.stats_manager = StatisticsManager(
+            stats_file=self.stats_file,
+            db_file=self.stats_db,
+            enabled=True
+        )
         self.video_player = Mock()
         self.video_player.video_files = []
         self.video_player.current_video = None

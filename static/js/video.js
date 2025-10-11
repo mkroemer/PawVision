@@ -108,9 +108,35 @@ const VideoManager = {
                 if (status.is_playing) {
                     playButton.disabled = true;
                     stopButton.disabled = false;
+                } else if (status.playback_disabled) {
+                    // Disable play button during night mode if playback is disabled
+                    playButton.disabled = true;
+                    stopButton.disabled = true;
+                    playButton.title = 'Playback is disabled during night mode';
                 } else {
                     playButton.disabled = false;
                     stopButton.disabled = true;
+                    playButton.title = 'Play Random Video';
+                }
+            }
+            
+            // Show warning message if playback is disabled
+            if (status.playback_disabled) {
+                const controlSection = document.querySelector('.control-section');
+                let warningDiv = document.getElementById('night-mode-warning');
+                
+                if (!warningDiv && controlSection) {
+                    warningDiv = document.createElement('div');
+                    warningDiv.id = 'night-mode-warning';
+                    warningDiv.className = 'warning-message';
+                    warningDiv.innerHTML = '🌙 Playback is currently disabled during night mode hours';
+                    controlSection.insertBefore(warningDiv, controlSection.firstChild);
+                }
+            } else {
+                // Remove warning if it exists and playback is no longer disabled
+                const warningDiv = document.getElementById('night-mode-warning');
+                if (warningDiv) {
+                    warningDiv.remove();
                 }
             }
             
@@ -330,6 +356,32 @@ const VideoManager = {
     init() {
         // Set up event delegation for dynamically added buttons
         document.addEventListener('click', (e) => {
+            // Handle play button clicks
+            if (e.target.closest('.play-btn')) {
+                const button = e.target.closest('.play-btn');
+                const videoItem = button.closest('.video-item');
+                const path = videoItem ? videoItem.dataset.path : button.dataset.path;
+                
+                if (path) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.playSpecificVideo(path);
+                }
+            }
+            
+            // Handle download button clicks (YouTube videos)
+            if (e.target.closest('.download-btn')) {
+                const button = e.target.closest('.download-btn');
+                const path = button.dataset.path;
+                const quality = button.dataset.quality || '720p';
+                
+                if (path && typeof YouTube !== 'undefined') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    YouTube.downloadVideo(path, quality);
+                }
+            }
+            
             // Handle edit button clicks
             if (e.target.closest('.edit-btn')) {
                 const button = e.target.closest('.edit-btn');

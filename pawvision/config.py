@@ -19,6 +19,7 @@ class PawVisionConfig:
     # Night mode settings (HH:MM string format only)
     night_mode_start: str = "22:00"
     night_mode_end: str = "06:00"
+    night_mode_disable_playback: bool = False  # Disable all playback during night mode
 
     # Button settings (HH:MM string format only)
     button_enabled: bool = True
@@ -150,10 +151,6 @@ class ConfigManager:
             if os.path.exists(self.config_file):
                 with open(self.config_file, "r", encoding="utf-8") as f:
                     data = json.load(f)
-
-                # Backward compatibility: handle old field names
-                if "timeout_minutes" in data and "playback_duration_minutes" not in data:
-                    data["playback_duration_minutes"] = data.pop("timeout_minutes")
 
                 # Set dev mode specific defaults
                 if self.dev_mode:

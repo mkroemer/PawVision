@@ -413,11 +413,25 @@ class WebInterface:
                         200,
                     )
                 else:
-                    return jsonify({"error": "Failed to add YouTube video"}), 500
+                    # Provide helpful error message for YouTube failures
+                    error_details = (
+                        "Failed to add YouTube video. This could be due to: "
+                        "1) YouTube bot detection (try updating yt-dlp: pip install -U yt-dlp), "
+                        "2) Invalid video URL or private/unavailable video, "
+                        "3) Network issues. "
+                        "Check the logs for details or see docs/youtube_troubleshooting.md"
+                    )
+                    self.logger.error("YouTube add failed for URL: %s", url)
+                    return jsonify({"error": error_details}), 500
 
             except Exception as e:
                 self.logger.error("Add YouTube error: %s", e)
-                return jsonify({"error": "Failed to add YouTube video"}), 500
+                error_msg = str(e)
+                if "Sign in" in error_msg or "bot" in error_msg.lower():
+                    return jsonify({
+                        "error": "YouTube bot detection triggered. Update yt-dlp (pip install -U yt-dlp) or add cookies. See docs/youtube_troubleshooting.md for help."
+                    }), 503
+                return jsonify({"error": "Failed to add YouTube video. Check logs for details."}), 500
 
         @self.app.route("/api/youtube/download", methods=["POST"])
         def download_youtube():
@@ -606,12 +620,16 @@ class WebInterface:
         def api_status():
             """API endpoint to get current status."""
             try:
+                is_night = self.video_player.is_night_mode()
+                playback_disabled = is_night and self.config.night_mode_disable_playback
+                
                 status = {
                     "is_playing": self.video_player.is_playing(),
                     "button_allowed": self.gpio_manager.is_button_allowed(),
                     "next_scheduled_play": self.gpio_manager.get_next_scheduled_play(),
-                    "night_mode": self.video_player.is_night_mode(),
-                    "video_count": len(self.video_player.get_all_videos()),
+                    "night_mode": is_night,
+                    "playback_disabled": playback_disabled,
+                    "video_count": len(self.video_player.get_all_video_files()),
                 }
 
                 return jsonify(status), 200
@@ -629,7 +647,7 @@ class WebInterface:
                     "version": "2.0.0",
                     "timestamp": self._get_timestamp(),
                     "is_playing": self.video_player.is_playing(),
-                    "video_count": len(self.video_player.get_all_videos()),
+                    "video_count": len(self.video_player.get_all_video_files()),
                 }
 
                 if self.statistics_manager:

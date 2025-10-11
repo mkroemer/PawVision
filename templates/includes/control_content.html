@@ -55,7 +55,7 @@
                         <span class="video-duration">{{ video.duration_str }}</span>
                     </div>
                 </div>
-                <button onclick="VideoManager.playSpecificVideo('{{ video.path }}')" class="btn-secondary btn-sm">
+                <button class="btn-secondary btn-sm play-btn" data-path="{{ video.path }}">
                     ▶️ Play
                 </button>
             </div>

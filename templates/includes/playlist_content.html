@@ -132,15 +132,14 @@
                 </div>
                 
                 <div class="video-actions">
-                    <button onclick="VideoManager.playSpecificVideo('{{ v.path }}')" class="btn-secondary btn-sm play-btn">
+                    <button class="btn-secondary btn-sm play-btn" data-path="{{ v.path }}">
                         ▶️ Play
                     </button>
                     
                     {% if v.is_youtube and not v.download_path %}
                     <button class="btn-secondary btn-sm download-btn" 
                             data-path="{{ v.path }}"
-                            data-quality="{{ v.quality|default('720p') }}"
-                            onclick="YouTube.downloadVideo('{{ v.path }}', '{{ v.quality|default('720p') }}')">
+                            data-quality="{{ v.quality|default('720p') }}">
                         📥 Download
                     </button>
                     {% endif %}

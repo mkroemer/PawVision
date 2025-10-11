@@ -259,10 +259,6 @@ class VideoPlayer:
         self.logger.debug("Found %d videos", len(videos))
         return videos
 
-    def get_all_videos(self) -> List[str]:
-        """Get list of all video files (for backward compatibility)."""
-        return self.get_all_video_files()
-
     def get_video_library_entries(self) -> List[VideoEntry]:
         """Get all video entries from the library."""
         # Sync library with filesystem first
@@ -463,6 +459,11 @@ class VideoPlayer:
         Returns:
             True if playback started successfully, False otherwise
         """
+        # Check if night mode playback is disabled
+        if self.is_night_mode() and self.config.night_mode_disable_playback:
+            self.logger.info("Cannot start video - playback disabled during night mode")
+            return False
+        
         # Check if we can start a video (not playing and not in cooldown)
         if not self.can_start_video():
             if self.is_playing():

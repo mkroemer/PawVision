@@ -47,7 +47,7 @@ body.modal-open {
 /* Modal content */
 .modal-content {
     background: var(--white);
-    border-radius: var(--border-radius);
+    border-radius: var(--border-radius-xl);
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     overflow: hidden;
     min-width: 300px;
@@ -130,7 +130,7 @@ body.modal-open {
 }
 
 /* Modal types */
-.modal-info .modal-header { border-left: 4px solid var(--primary); }
+.modal-info .modal-header { border-left: 4px solid var(--primary-color); }
 .modal-confirm .modal-header { border-left: 4px solid var(--warning-color); }
 .modal-alert .modal-header { border-left: 4px solid var(--error-color); }
 .modal-danger .modal-header { border-left: 4px solid var(--error-color); }
@@ -158,7 +158,7 @@ body.modal-open {
     width: 100%;
     padding: 0.75rem;
     border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
+    border-radius: var(--border-radius-xl);
     background: var(--background-primary);
     color: var(--text-primary);
     font-size: 1rem;
@@ -169,7 +169,7 @@ body.modal-open {
 .modal-form textarea:focus,
 .modal-form select:focus {
     outline: none;
-    border-color: var(--primary);
+    border-color: var(--primary-color);
     box-shadow: 0 0 0 2px rgba(255, 145, 77, 0.2);
 }
 
@@ -177,7 +177,7 @@ body.modal-open {
 .btn {
     padding: 0.75rem 1.5rem;
     border: none;
-    border-radius: var(--border-radius);
+    border-radius: var(--border-radius-xl);
     font-size: 1rem;
     font-weight: 500;
     cursor: pointer;
@@ -190,7 +190,7 @@ body.modal-open {
 }
 
 .btn-primary {
-    background: var(--primary);
+    background: var(--primary-color);
     color: white;
 }
 
@@ -207,7 +207,7 @@ body.modal-open {
 
 .btn-secondary:hover {
     background: var(--light-gray);
-    border-color: var(--primary);
+    border-color: var(--primary-color);
 }
 
 .btn-danger {
@@ -259,7 +259,7 @@ body.modal-open {
 }
 
 .general-modal-header.info h3 { color: #3498db; }
-.general-modal-header.confirm h3 { color: var(--primary); }
+.general-modal-header.confirm h3 { color: var(--primary-color); }
 .general-modal-header.warning h3 { color: #f39c12; }
 .general-modal-header.error h3 { color: #e74c3c; }
 
@@ -312,7 +312,7 @@ body.modal-open {
 }
 
 .general-modal-confirm-btn.confirm {
-    background: linear-gradient(45deg, var(--primary), var(--primary-hover)) !important;
+    background: linear-gradient(45deg, var(--primary-color), var(--primary-hover)) !important;
     color: white !important;
     box-shadow: 0 4px 15px var(--primary-shadow) !important;
 }
@@ -355,15 +355,15 @@ body.modal-open {
     background-color: var(--white);
     padding: 25px;
     border: none;
-    border-radius: var(--border-radius);
+    border-radius: var(--border-radius-xl);
     width: 90%;
     max-width: 500px;
-    box-shadow: var(--box-shadow);
+    box-shadow: var(--shadow-lg);
     text-align: center;
 }
 
 .modal-content h3 {
-    color: var(--primary);
+    color: var(--primary-color);
     margin-bottom: 20px;
     font-size: 1.3em;
 }
@@ -396,7 +396,7 @@ body.modal-open {
 
 .progress-bar {
     height: 100%;
-    background: linear-gradient(45deg, var(--primary), var(--primary-hover));
+    background: linear-gradient(45deg, var(--primary-color), var(--primary-hover));
     width: 0%;
     transition: width 0.3s ease;
     border-radius: 12px;
@@ -474,7 +474,7 @@ body.modal-open {
     transform: translate(-50%, -50%);
     background: white;
     padding: 30px;
-    border-radius: var(--border-radius);
+    border-radius: var(--border-radius-xl);
     min-width: 350px;
     max-width: 90vw;
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
@@ -590,7 +590,7 @@ body.modal-open {
 
 .download-progress .progress-fill {
     height: 100%;
-    background: linear-gradient(45deg, var(--primary), var(--primary-hover));
+    background: linear-gradient(45deg, var(--primary-color), var(--primary-hover));
     border-radius: 4px;
     transition: width 0.3s ease;
     position: relative;

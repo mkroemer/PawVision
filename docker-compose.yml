@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  pawvision:
+    build: .
+    container_name: pawvision
+    ports:
+      - "5001:5001"
+    volumes:
+      # Data persistence
+      - ./videos:/data/videos
+      - ./youtube_cache:/data/youtube_cache
+      - ./youtube_downloads:/data/youtube_downloads
+      - ./pawvision.db:/data/pawvision.db
+      - ./pawvision_settings.json:/data/pawvision_settings.json
+      - ./pawvision.log:/data/pawvision.log
+    environment:
+      - PAWVISION_DEV_MODE=0
+      - TZ=America/New_York
+    restart: unless-stopped
+    # For GPIO access on Raspberry Pi, add:
+    # privileged: true
+    # devices:
+    #   - /dev/gpiomem:/dev/gpiomem
+    networks:
+      - pawvision-network
+
+networks:
+  pawvision-network:
+    driver: bridge

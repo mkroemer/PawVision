@@ -138,7 +138,7 @@
 }
 
 .bar {
-    background: linear-gradient(180deg, var(--primary) 0%, var(--primary-dark) 100%);
+    background: linear-gradient(180deg, var(--primary-color) 0%, var(--primary-dark) 100%);
     width: 100%;
     max-width: 20px;
     border-radius: 3px 3px 0 0;
@@ -289,16 +289,16 @@
 
 .time-filter button.active,
 .filter button.active {
-    background: var(--primary);
+    background: var(--primary-color);
     color: white;
-    border-color: var(--primary);
+    border-color: var(--primary-color);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .time-filter button:hover:not(.active),
 .filter button:hover:not(.active) {
     background: var(--background-secondary);
-    border-color: var(--primary);
+    border-color: var(--primary-color);
     transform: translateY(-1px);
 }
 
@@ -329,7 +329,7 @@
 
 .date-input:focus {
     outline: none;
-    border-color: var(--primary);
+    border-color: var(--primary-color);
     box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.2);
 }
 

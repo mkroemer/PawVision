@@ -152,17 +152,6 @@ const PawVisionApp = {
      * Handle initial page state
      */
     handleInitialState() {
-        // SPA navigation system handles URL hash automatically
-        const hash = window.location.hash.substring(1);
-        
-        // Load statistics if on statistics tab
-        if (hash === 'statistics' && typeof Statistics !== 'undefined') {
-            // Small delay to ensure tab is properly loaded
-            setTimeout(() => {
-                Statistics.initializeTab();
-            }, 100);
-        }
-
         // Show welcome message on first visit
         if (!localStorage.getItem('pawvision_visited')) {
             setTimeout(() => {
@@ -201,9 +190,7 @@ const PawVisionApp = {
      * Refresh application data
      */
     refresh() {
-        // Reload current page while preserving tab
-        const currentTab = window.location.hash || '#start';
-        window.location.href = window.location.pathname + currentTab;
+        // Reload current page
         window.location.reload();
     }
 };

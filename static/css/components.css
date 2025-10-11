@@ -14,7 +14,7 @@
     margin-top: 20px;
     padding: 20px;
     background: rgba(255, 255, 255, 0.8);
-    border-radius: var(--border-radius-small);
+    border-radius: var(--border-radius-md);
     border: 1px solid rgba(255, 145, 77, 0.2);
 }
 
@@ -26,7 +26,7 @@
 .message-area {
     margin-top: 15px;
     padding: 10px 15px;
-    border-radius: var(--border-radius-small);
+    border-radius: var(--border-radius-md);
     font-weight: 500;
 }
 
@@ -100,7 +100,7 @@
     text-align: center;
     color: var(--medium-gray);
     background: rgba(255, 255, 255, 0.5);
-    border-radius: var(--border-radius-small);
+    border-radius: var(--border-radius-md);
     border: 2px dashed rgba(255, 145, 77, 0.3);
 }
 
@@ -136,7 +136,7 @@
     background: rgba(255, 255, 255, 0.9);
     padding: 15px;
     margin-bottom: 15px;
-    border-radius: var(--border-radius-small);
+    border-radius: var(--border-radius-md);
     border: 1px solid rgba(255, 145, 77, 0.1);
     display: flex;
     justify-content: space-between;
@@ -229,7 +229,7 @@
 .stat-card {
     background: linear-gradient(135deg, rgba(255, 145, 77, 0.1), rgba(62, 193, 185, 0.1));
     padding: 20px;
-    border-radius: var(--border-radius-small);
+    border-radius: var(--border-radius-md);
     text-align: center;
     border: 1px solid rgba(255, 145, 77, 0.2);
 }
@@ -238,7 +238,7 @@
 .stat-number {
     font-size: 2.5em;
     font-weight: bold;
-    color: var(--primary);
+    color: var(--primary-color);
     margin-bottom: 5px;
     line-height: 1;
 }
@@ -255,7 +255,7 @@
 .chart-container {
     background: rgba(255, 255, 255, 0.95);
     padding: 20px;
-    border-radius: var(--border-radius-small);
+    border-radius: var(--border-radius-md);
     border: 1px solid rgba(255, 145, 77, 0.1);
     margin-top: 20px;
 }
@@ -270,7 +270,7 @@
 }
 
 .chart-controls h3 {
-    color: var(--primary);
+    color: var(--primary-color);
     margin: 0;
     font-size: 1.2em;
 }
@@ -278,7 +278,7 @@
 .chart-controls input[type="date"] {
     padding: 8px 12px;
     border: 1px solid var(--border-gray);
-    border-radius: var(--border-radius-small);
+    border-radius: var(--border-radius-md);
     font-size: 0.9em;
 }
 
@@ -290,7 +290,7 @@
 }
 
 .tooltip i {
-    color: var(--primary);
+    color: var(--primary-color);
     font-weight: bold;
     background: var(--primary-light);
     border-radius: 50%;
@@ -310,7 +310,7 @@
     background-color: var(--dark-gray);
     color: white;
     text-align: center;
-    border-radius: var(--border-radius-small);
+    border-radius: var(--border-radius-md);
     padding: 8px 12px;
     position: absolute;
     z-index: 1000;
@@ -377,7 +377,7 @@
     width: 20px;
     height: 20px;
     border: 2px solid var(--border-gray);
-    border-top: 2px solid var(--primary);
+    border-top: 2px solid var(--primary-color);
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin-right: 10px;
@@ -388,7 +388,7 @@
     background: var(--danger-light);
     color: var(--danger-color);
     padding: 15px;
-    border-radius: var(--border-radius-small);
+    border-radius: var(--border-radius-md);
     border: 1px solid var(--danger-border);
     margin: 15px 0;
     text-align: center;
@@ -467,7 +467,7 @@
     margin-bottom: 25px;
     padding: 20px;
     background: linear-gradient(135deg, rgba(255, 145, 77, 0.05), rgba(62, 193, 185, 0.05));
-    border-radius: var(--border-radius);
+    border-radius: var(--border-radius-xl);
     border: 1px solid rgba(255, 145, 77, 0.1);
 }
 
@@ -505,14 +505,14 @@
     min-width: 200px;
     padding: 8px 12px;
     border: 2px solid var(--border-gray);
-    border-radius: var(--border-radius-small);
+    border-radius: var(--border-radius-md);
     background: var(--white);
     font-size: 0.9em;
     transition: all 0.3s ease;
 }
 
 .file-input-inline:focus {
-    border-color: var(--primary);
+    border-color: var(--primary-color);
     outline: none;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
@@ -520,7 +520,7 @@
 .file-input-compact {
     background: var(--white);
     border: 2px solid var(--border-gray);
-    border-radius: var(--border-radius-small);
+    border-radius: var(--border-radius-md);
     padding: 8px 12px;
     cursor: pointer;
     font-size: 0.9em;
@@ -529,7 +529,7 @@
 }
 
 .file-input-compact:hover {
-    border-color: var(--primary);
+    border-color: var(--primary-color);
     background: var(--primary-light);
 }
 
@@ -538,7 +538,7 @@
     min-width: 250px;
     padding: 8px 12px;
     border: 2px solid var(--border-gray);
-    border-radius: var(--border-radius-small);
+    border-radius: var(--border-radius-md);
     font-size: 0.9em;
     font-family: var(--font-family);
     transition: all 0.3s ease;
@@ -546,7 +546,7 @@
 
 .url-input-compact:focus {
     outline: none;
-    border-color: var(--primary);
+    border-color: var(--primary-color);
     box-shadow: 0 0 0 2px var(--primary-light);
 }
 

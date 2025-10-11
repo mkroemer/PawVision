@@ -123,6 +123,10 @@ class ButtonHandler:
             else:
                 self.logger.info("Button press blocked by cooldown period")
 
+    def handle_button_press(self):
+        """Public interface for handling button press (for manual triggering)."""
+        self._handle_button_press()
+
     def is_button_allowed(self) -> bool:
         """Check if button is allowed based on settings and schedule."""
         if not self.config.button_enabled:
@@ -309,4 +313,4 @@ class GPIOManager:
     def simulate_button_press(self):
         """Simulate button press (for development/testing)."""
         self.logger.info("Manual button press triggered")
-        self.button_handler._handle_button_press()
+        self.button_handler.handle_button_press()

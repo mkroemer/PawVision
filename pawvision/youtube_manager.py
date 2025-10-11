@@ -40,6 +40,39 @@ class YouTubeManager:
         if not YT_DLP_AVAILABLE:
             self.logger.warning("yt-dlp not available. YouTube functionality will be limited.")
 
+    def _get_ydl_opts(self, extra_opts: Dict = None) -> Dict:
+        """Get base yt-dlp options with anti-bot measures."""
+        base_opts = {
+            "quiet": True,
+            "no_warnings": True,
+            # Anti-bot detection measures
+            "extractor_args": {
+                "youtube": {
+                    "player_client": ["android", "web"],
+                    "skip": ["dash", "hls"],
+                }
+            },
+            # Realistic browser headers
+            "http_headers": {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Accept-Language": "en-us,en;q=0.5",
+                "Sec-Fetch-Mode": "navigate",
+            },
+        }
+        
+        # Check if cookies file exists for authentication
+        cookies_path = os.path.join(self.cache_dir, "youtube_cookies.txt")
+        if os.path.exists(cookies_path):
+            base_opts["cookiefile"] = cookies_path
+            self.logger.debug("Using cookies file for YouTube authentication")
+        
+        # Merge with extra options if provided
+        if extra_opts:
+            base_opts.update(extra_opts)
+        
+        return base_opts
+
     def extract_video_id(self, url: str) -> Optional[str]:
         """Extract YouTube video ID from URL."""
         # Handle various YouTube URL formats
@@ -63,18 +96,16 @@ class YouTubeManager:
     def get_video_info(self, url: str) -> Optional[Dict]:
         """Get video information from YouTube."""
         if not YT_DLP_AVAILABLE:
+            self.logger.error("yt-dlp is not available. Please install it with: pip install yt-dlp")
             return None
 
         video_id = self.extract_video_id(url)
         if not video_id:
+            self.logger.error("Could not extract video ID from URL: %s", url)
             return None
 
         try:
-            ydl_opts = {
-                "quiet": True,
-                "no_warnings": True,
-                "extract_flat": False,
-            }
+            ydl_opts = self._get_ydl_opts({"extract_flat": False})
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=False)
@@ -90,8 +121,25 @@ class YouTubeManager:
                     "formats": info.get("formats", []),
                 }
 
+        except ExtractorError as e:
+            error_msg = str(e)
+            if "Sign in" in error_msg or "bot" in error_msg.lower():
+                self.logger.error(
+                    "YouTube bot detection triggered for %s. "
+                    "To fix this: 1) Update yt-dlp (pip install -U yt-dlp), "
+                    "2) Export YouTube cookies to %s/youtube_cookies.txt, "
+                    "3) Try again in a few minutes",
+                    video_id,
+                    self.cache_dir
+                )
+            else:
+                self.logger.error("Error extracting video info for %s: %s", video_id, error_msg)
+            return None
+        except DownloadError as e:
+            self.logger.error("Download error for %s: %s", video_id, e)
+            return None
         except Exception as e:
-            self.logger.error("Error extracting video info for %s: %s", video_id, e)
+            self.logger.error("Unexpected error extracting video info for %s: %s", video_id, e)
             return None
 
     def get_video_title_and_duration(self, url: str) -> Tuple[Optional[str], Optional[int]]:
@@ -101,19 +149,21 @@ class YouTubeManager:
             return info.get("title"), info.get("duration")
         return None, None
 
-    def get_stream_url(self, video_id: str, quality: str = None) -> Tuple[Optional[str], Optional[str]]:
-        """Get direct stream URL for a YouTube video."""
+    def get_stream_url(self, video_id: str, quality: str = None) -> Tuple[Optional[str], Optional[datetime]]:
+        """Get direct stream URL for a YouTube video.
+        
+        Returns:
+            Tuple of (stream_url, expires_datetime) where expires_datetime is a datetime object
+        """
         if not YT_DLP_AVAILABLE:
             return None, None
 
         quality = quality or self.preferred_quality
 
         try:
-            ydl_opts = {
-                "quiet": True,
-                "no_warnings": True,
+            ydl_opts = self._get_ydl_opts({
                 "format": self._get_format_selector(quality),
-            }
+            })
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=False)
@@ -122,10 +172,18 @@ class YouTubeManager:
                 if "url" in info:
                     # Calculate expiration time (YouTube URLs typically expire in 6 hours)
                     expires = datetime.now() + timedelta(hours=6)
-                    return info["url"], expires.isoformat()
+                    return info["url"], expires  # Return datetime object, not string
 
         except (DownloadError, ExtractorError) as e:
-            self.logger.error("Error getting stream URL for %s: %s", video_id, e)
+            error_msg = str(e)
+            if "Sign in" in error_msg or "bot" in error_msg.lower():
+                self.logger.error(
+                    "YouTube bot detection for %s. Try updating yt-dlp or adding cookies to %s/youtube_cookies.txt",
+                    video_id,
+                    self.cache_dir
+                )
+            else:
+                self.logger.error("Error getting stream URL for %s: %s", video_id, e)
 
         return None, None
 
@@ -210,14 +268,12 @@ class YouTubeManager:
                 )
 
         try:
-            ydl_opts = {
-                "quiet": True,
-                "no_warnings": True,
+            ydl_opts = self._get_ydl_opts({
                 "format": self._get_format_selector(quality),
                 "outtmpl": output_path,
                 "writeinfojson": False,
                 "progress_hooks": [progress_hook] if progress_callback else [],
-            }
+            })
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([f"https://www.youtube.com/watch?v={video_id}"])
@@ -230,8 +286,20 @@ class YouTubeManager:
                     self.logger.info("Downloaded YouTube video: %s", download_path)
                     return download_path
 
+        except (DownloadError, ExtractorError) as e:
+            error_msg = str(e)
+            if "Sign in" in error_msg or "bot" in error_msg.lower():
+                self.logger.error(
+                    "YouTube bot detection for %s. Solutions: 1) Update yt-dlp, 2) Add cookies to %s/youtube_cookies.txt",
+                    video_id,
+                    self.cache_dir
+                )
+            else:
+                self.logger.error("Error downloading video %s: %s", video_id, e)
+            if progress_callback:
+                progress_callback({"status": "error", "error": str(e)})
         except (OSError, RuntimeError) as e:
-            self.logger.error("Error downloading video %s: %s", video_id, e)
+            self.logger.error("File system error downloading video %s: %s", video_id, e)
             if progress_callback:
                 progress_callback({"status": "error", "error": str(e)})
 
@@ -300,7 +368,7 @@ class YouTubeManager:
         if stream_url:
             video_entry.stream_url = stream_url
             video_entry.stream_expires = stream_expires
-            video_entry.updated_at = datetime.now().isoformat()
+            # Note: VideoEntry doesn't have updated_at field
             return True
 
         return False

@@ -2,7 +2,7 @@ import unittest
 import tempfile
 import os
 from pawvision.main import PawVisionApp
-from pawvision.statistics_unified import StatisticsManager
+from pawvision.statistics import StatisticsManager
 
 class TestIntegration(unittest.TestCase):
     """Integration tests for the complete system."""
@@ -29,7 +29,11 @@ class TestIntegration(unittest.TestCase):
         self.assertIsNotNone(app.web_interface)
         app.cleanup()
     def test_config_statistics_integration(self):
-        stats_manager = StatisticsManager(self.stats_db, enabled=True, legacy_json_file=self.stats_file)
+        stats_manager = StatisticsManager(
+            stats_file=self.stats_file,
+            db_file=self.stats_db,
+            enabled=True
+        )
         stats_manager.record_button_press("play")
         stats_manager.record_api_call("status")
         summary = stats_manager.get_summary()

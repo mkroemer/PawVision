@@ -28,7 +28,7 @@
     <!-- Navigation -->
     <nav class="menu" role="navigation" aria-label="Main navigation">
         <button class="header-link active" onclick="SPA.switchTab(event, 'control')" data-tab="control" aria-current="page">🎮 Control</button>
-        <button class="header-link" onclick="SPA.switchTab(event, 'playlist')" data-tab="playlist">📋 Playlist</button>
+        <button class="header-link" onclick="SPA.switchTab(event, 'video-library')" data-tab="video-library">🎞️ Video Library</button>
         <button class="header-link" onclick="SPA.switchTab(event, 'statistics')" data-tab="statistics">📊 Statistics</button>
         <button class="header-link" onclick="SPA.switchTab(event, 'config')" data-tab="config">⚙️ Configuration</button>
     </nav>
@@ -40,8 +40,8 @@
                 {% include "includes/control_content.html" %}
             </div>
 
-            <!-- Playlist Tab Content -->
-            <div id="playlist" class="tab-content">
+            <!-- Video Library Tab Content -->
+            <div id="video-library" class="tab-content">
                 {% include "includes/playlist_content.html" %}
             </div>
 

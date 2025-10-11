@@ -611,16 +611,8 @@ class StatisticsManager:
 
         except sqlite3.Error as e:
             self.logger.error("Error getting hourly data: %s", e)
+            # Return empty dictionary on error
             return {}
-            # Fallback to aggregated stats
-            with self.stats_lock:
-                return {
-                    "total_button_presses": self._stats.get("button_presses", {}).get("total", 0),
-                    "today_button_presses": 0,
-                    "daily_average": 0,
-                    "peak_hour": "N/A",
-                    "recent_activity": [],
-                }
 
     def get_detailed_events(self, limit: int = 100, event_type: str = None) -> list:
         """Get detailed event history from SQLite."""

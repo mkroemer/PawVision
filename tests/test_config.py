@@ -98,6 +98,26 @@ class TestConfigManager(unittest.TestCase):
         self.assertEqual(config.playback_duration_minutes, 45)
         self.assertEqual(config.volume, 75)
         self.assertFalse(config.button_enabled)
+    
+    def test_night_mode_disable_playback(self):
+        """Test night mode disable playback configuration."""
+        # Test default value
+        config = PawVisionConfig()
+        self.assertFalse(config.night_mode_disable_playback)
+        
+        # Test with explicit value
+        config_enabled = PawVisionConfig(night_mode_disable_playback=True)
+        self.assertTrue(config_enabled.night_mode_disable_playback)
+        config_enabled.validate()  # Should not raise
+        
+        # Test serialization
+        config_dict = config_enabled.to_dict()
+        self.assertTrue(config_dict['night_mode_disable_playback'])
+        
+        # Test loading from dict
+        config_loaded = PawVisionConfig(**config_dict)
+        self.assertTrue(config_loaded.night_mode_disable_playback)
+    
     def test_save_config(self):
         config = PawVisionConfig(playback_duration_minutes=60, volume=80)
         self.config_manager.save_config(config)
