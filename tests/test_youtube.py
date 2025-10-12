@@ -34,6 +34,26 @@ def test_youtube_manager():
         print(f"Video ID: {video_id}")
         print(f"Valid: {video_id is not None}")
         print()
+    
+    # Test timestamp extraction from URLs
+    print("Testing timestamp extraction...")
+    timestamp_tests = [
+        ("https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=906s", 906.0, "906 seconds"),
+        ("https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=15m6s", 906.0, "15 minutes 6 seconds"),
+        ("https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=1h30m", 5400.0, "1 hour 30 minutes"),
+        ("https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=906", 906.0, "906 (no suffix)"),
+        ("https://www.youtube.com/watch?v=dQw4w9WgXcQ", 0.0, "no timestamp"),
+        ("https://youtu.be/dQw4w9WgXcQ?t=120", 120.0, "short URL with timestamp"),
+    ]
+    
+    for url, expected, description in timestamp_tests:
+        result = yt_manager.extract_timestamp_from_url(url)
+        status = "✓" if result == expected else "✗"
+        print(f"{status} {description}: {url}")
+        print(f"  Expected: {expected}s, Got: {result}s")
+        if result != expected:
+            print(f"  ERROR: Mismatch!")
+        print()
 
 def test_video_library():
     """Test video library with YouTube integration."""
@@ -76,7 +96,6 @@ def test_video_library():
         print(f"Is YouTube: {retrieved.is_youtube}")
         print(f"YouTube ID: {retrieved.youtube_id}")
         print(f"Custom range: {retrieved.custom_start_time}s - {retrieved.custom_end_time}s")
-        print(f"Effective duration: {retrieved.get_effective_duration()}s")
     
     # List all videos
     all_videos = library.get_all_videos()

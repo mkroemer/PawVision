@@ -58,11 +58,9 @@ Thumbs.db
 
 # PawVision specific
 pawvision_settings.json
-pawvision_stats.json
 pawvision_stats.db
 pawvision_stats.db-wal
 pawvision_stats.db-shm
-pawvision_cache.json
 *.log
 *.log.*
 

@@ -14,12 +14,19 @@ class StatisticsManager:
 
     def __init__(
         self,
-        stats_file: str,
+        stats_file: str,  # Kept for backward compatibility
         db_file: str,
         enabled: bool = True,
         cooldown_seconds: int = 60,
     ):
-        self.stats_file = stats_file
+        """Initialize the statistics manager.
+        
+        Args:
+            stats_file: Deprecated - kept for backward compatibility only
+            db_file: Path to SQLite database file
+            enabled: Whether statistics tracking is enabled
+            cooldown_seconds: Cooldown period between button presses
+        """
         self.db_file = db_file
         self.enabled = enabled
         self.cooldown_seconds = cooldown_seconds
@@ -29,10 +36,7 @@ class StatisticsManager:
 
         if self.enabled:
             self._init_database()
-            self._stats = self._load_stats()
             self._load_last_button_press()
-        else:
-            self._stats = {}
 
     def _init_database(self):
         """Initialize SQLite database with required schema."""
@@ -142,86 +146,6 @@ class StatisticsManager:
         self.cooldown_seconds = max(0, seconds)
         self.logger.info("Button cooldown period set to %d seconds", self.cooldown_seconds)
 
-    def _load_stats(self) -> Dict:
-        """Load aggregated statistics from JSON file."""
-        default_stats = {
-            "button_presses": {
-                "total": 0,
-                "play_actions": 0,
-                "stop_actions": 0,
-                "daily": {},
-                "hourly": {},
-            },
-            "video_plays": {"total": 0, "by_video": {}, "daily": {}, "hourly": {}},
-            "video_viewing": {
-                "total_sessions": 0,
-                "total_duration": 0.0,
-                "average_duration": 0.0,
-                "by_end_reason": {},
-                "by_video": {},
-                "daily": {},
-                "hourly": {},
-            },
-            "scheduled_plays": {"total": 0, "by_time": {}, "daily": {}},
-            "api_calls": {"total": 0, "play": 0, "stop": 0, "daily": {}},
-            "interruptions": {"total": 0, "by_video": {}, "daily": {}, "hourly": {}},
-            "system": {
-                "last_updated": None,
-                "start_time": datetime.now().isoformat(),
-                "total_uptime_hours": 0,
-            },
-        }
-
-        if not self.enabled:
-            return default_stats
-
-        try:
-            if os.path.exists(self.stats_file):
-                with open(self.stats_file, "r", encoding="utf-8") as f:
-                    stats = json.load(f)
-
-                # Merge with defaults to ensure all keys exist
-                for key, value in default_stats.items():
-                    if key not in stats:
-                        stats[key] = value
-                    elif isinstance(value, dict):
-                        for subkey, subvalue in value.items():
-                            if subkey not in stats[key]:
-                                stats[key][subkey] = subvalue
-
-                self.logger.info("Statistics loaded from %s", self.stats_file)
-                return stats
-            else:
-                self.logger.info("Statistics file not found, creating new: %s", self.stats_file)
-                self._save_stats_to_file(default_stats)
-                return default_stats
-
-        except (json.JSONDecodeError, OSError) as e:
-            self.logger.error("Error loading statistics: %s", e)
-            self.logger.info("Using default statistics")
-            return default_stats
-
-    def _save_stats_to_file(self, stats: Dict = None):
-        """Save aggregated statistics to JSON file."""
-        if not self.enabled:
-            return
-
-        try:
-            # Ensure directory exists
-            os.makedirs(os.path.dirname(self.stats_file), exist_ok=True)
-
-            with self.stats_lock:
-                stats_to_save = stats or self._stats
-                stats_to_save["system"]["last_updated"] = datetime.now().isoformat()
-
-                with open(self.stats_file, "w", encoding="utf-8") as f:
-                    json.dump(stats_to_save, f, indent=2)
-
-            self.logger.debug("Statistics saved to %s", self.stats_file)
-
-        except OSError as e:
-            self.logger.error("Failed to save statistics: %s", e)
-
     def record_button_press(
         self,
         action: str = "play",
@@ -266,70 +190,6 @@ class StatisticsManager:
             source="physical_button" if not force else "web_api",
         )
 
-        # Update aggregated stats
-        with self.stats_lock:
-            if is_interruption:
-                # Track interruptions separately
-                if "interruptions" not in self._stats:
-                    self._stats["interruptions"] = {
-                        "total": 0,
-                        "by_video": {},
-                        "daily": {},
-                        "hourly": {},
-                    }
-
-                self._stats["interruptions"]["total"] += 1
-
-                # Track which videos get interrupted most
-                if video_file:
-                    self._stats["interruptions"]["by_video"][video_file] = (
-                        self._stats["interruptions"]["by_video"].get(video_file, 0) + 1
-                    )
-
-                # Update daily and hourly interruption stats
-                today = datetime.now().strftime("%Y-%m-%d")
-                hour = datetime.now().strftime("%Y-%m-%d-%H")
-
-                self._stats["interruptions"]["daily"][today] = self._stats["interruptions"]["daily"].get(today, 0) + 1
-                self._stats["interruptions"]["hourly"][hour] = self._stats["interruptions"]["hourly"].get(hour, 0) + 1
-            else:
-                # Normal button press stats (only for play actions or forced stops)
-                self._stats["button_presses"]["total"] += 1
-                if action == "play":
-                    self._stats["button_presses"]["play_actions"] += 1
-                elif action == "stop":
-                    self._stats["button_presses"]["stop_actions"] += 1
-
-                # Update daily and hourly stats
-                today = datetime.now().strftime("%Y-%m-%d")
-                hour = datetime.now().strftime("%Y-%m-%d-%H")
-
-                if today not in self._stats["button_presses"]["daily"]:
-                    self._stats["button_presses"]["daily"][today] = {}
-                self._stats["button_presses"]["daily"][today][action] = (
-                    self._stats["button_presses"]["daily"][today].get(action, 0) + 1
-                )
-
-                if hour not in self._stats["button_presses"]["hourly"]:
-                    self._stats["button_presses"]["hourly"][hour] = {}
-                self._stats["button_presses"]["hourly"][hour][action] = (
-                    self._stats["button_presses"]["hourly"][hour].get(action, 0) + 1
-                )
-            hour = datetime.now().strftime("%Y-%m-%d-%H")
-
-            if today not in self._stats["button_presses"]["daily"]:
-                self._stats["button_presses"]["daily"][today] = {}
-            self._stats["button_presses"]["daily"][today][action] = (
-                self._stats["button_presses"]["daily"][today].get(action, 0) + 1
-            )
-
-            if hour not in self._stats["button_presses"]["hourly"]:
-                self._stats["button_presses"]["hourly"][hour] = {}
-            self._stats["button_presses"]["hourly"][hour][action] = (
-                self._stats["button_presses"]["hourly"][hour].get(action, 0) + 1
-            )
-
-        self._save_stats_to_file()
         self.logger.info("Button press recorded: %s (cooldown: %ds)", action, self.cooldown_seconds)
         return True
 
@@ -348,21 +208,6 @@ class StatisticsManager:
             source=source,
         )
 
-        # Update aggregated stats
-        with self.stats_lock:
-            self._stats["video_plays"]["total"] += 1
-            self._stats["video_plays"]["by_video"][video_file] = (
-                self._stats["video_plays"]["by_video"].get(video_file, 0) + 1
-            )
-
-            # Update daily and hourly stats
-            today = datetime.now().strftime("%Y-%m-%d")
-            hour = datetime.now().strftime("%Y-%m-%d-%H")
-
-            self._stats["video_plays"]["daily"][today] = self._stats["video_plays"]["daily"].get(today, 0) + 1
-            self._stats["video_plays"]["hourly"][hour] = self._stats["video_plays"]["hourly"].get(hour, 0) + 1
-
-        self._save_stats_to_file()
         self.logger.info("Video play recorded: %s", video_file)
 
     def record_video_viewing(self, video_file: str, viewing_duration: float, end_reason: str = "manual"):
@@ -382,55 +227,6 @@ class StatisticsManager:
             video_file=video_file,
         )
 
-        # Update aggregated stats
-        with self.stats_lock:
-            if "video_viewing" not in self._stats:
-                self._stats["video_viewing"] = {
-                    "total_sessions": 0,
-                    "total_duration": 0.0,
-                    "average_duration": 0.0,
-                    "by_end_reason": {},
-                    "by_video": {},
-                    "daily": {},
-                    "hourly": {},
-                }
-
-            viewing_stats = self._stats["video_viewing"]
-            viewing_stats["total_sessions"] += 1
-            viewing_stats["total_duration"] += viewing_duration
-            viewing_stats["average_duration"] = viewing_stats["total_duration"] / viewing_stats["total_sessions"]
-
-            # Track by end reason
-            viewing_stats["by_end_reason"][end_reason] = viewing_stats["by_end_reason"].get(end_reason, 0) + 1
-
-            # Track by video
-            if video_file not in viewing_stats["by_video"]:
-                viewing_stats["by_video"][video_file] = {
-                    "sessions": 0,
-                    "total_duration": 0.0,
-                    "average_duration": 0.0,
-                }
-
-            video_viewing = viewing_stats["by_video"][video_file]
-            video_viewing["sessions"] += 1
-            video_viewing["total_duration"] += viewing_duration
-            video_viewing["average_duration"] = video_viewing["total_duration"] / video_viewing["sessions"]
-
-            # Update daily and hourly stats
-            today = datetime.now().strftime("%Y-%m-%d")
-            hour = datetime.now().strftime("%Y-%m-%d-%H")
-
-            if today not in viewing_stats["daily"]:
-                viewing_stats["daily"][today] = {"sessions": 0, "duration": 0.0}
-            viewing_stats["daily"][today]["sessions"] += 1
-            viewing_stats["daily"][today]["duration"] += viewing_duration
-
-            if hour not in viewing_stats["hourly"]:
-                viewing_stats["hourly"][hour] = {"sessions": 0, "duration": 0.0}
-            viewing_stats["hourly"][hour]["sessions"] += 1
-            viewing_stats["hourly"][hour]["duration"] += viewing_duration
-
-        self._save_stats_to_file()
         self.logger.info(
             "Video viewing recorded: %s (%.1fs, %s)",
             video_file,
@@ -438,7 +234,7 @@ class StatisticsManager:
             end_reason,
         )
 
-    def record_scheduled_play(self, schedule_time: str, video_file: str):
+    def record_scheduled_play(self, schedule_time: str, video_file: str = None):
         """Record a scheduled play event."""
         if not self.enabled:
             return
@@ -452,17 +248,6 @@ class StatisticsManager:
             source="scheduler",
         )
 
-        # Update aggregated stats
-        with self.stats_lock:
-            self._stats["scheduled_plays"]["total"] += 1
-            self._stats["scheduled_plays"]["by_time"][schedule_time] = (
-                self._stats["scheduled_plays"]["by_time"].get(schedule_time, 0) + 1
-            )
-
-            today = datetime.now().strftime("%Y-%m-%d")
-            self._stats["scheduled_plays"]["daily"][today] = self._stats["scheduled_plays"]["daily"].get(today, 0) + 1
-
-        self._save_stats_to_file()
         self.logger.info("Scheduled play recorded: %s at %s", video_file, schedule_time)
 
     def record_api_call(self, endpoint: str, action: str = None):
@@ -478,22 +263,7 @@ class StatisticsManager:
             source="web_api",
         )
 
-        # Update aggregated stats
-        with self.stats_lock:
-            self._stats["api_calls"]["total"] += 1
-            if action:
-                self._stats["api_calls"][action] = self._stats["api_calls"].get(action, 0) + 1
-
-            today = datetime.now().strftime("%Y-%m-%d")
-            self._stats["api_calls"]["daily"][today] = self._stats["api_calls"]["daily"].get(today, 0) + 1
-
-        self._save_stats_to_file()
         self.logger.debug("API call recorded: %s", endpoint)
-
-    def get_stats(self) -> Dict:
-        """Get current aggregated statistics."""
-        with self.stats_lock:
-            return self._stats.copy()
 
     def get_summary(self) -> Dict:
         """Get a summary of key statistics from SQLite and aggregated data."""
@@ -683,11 +453,6 @@ class StatisticsManager:
                 conn.execute("DELETE FROM events")
                 conn.commit()
 
-            # Reset aggregated stats
-            with self.stats_lock:
-                self._stats = self._load_stats()
-
-            self._save_stats_to_file()
             self.logger.info("Statistics reset successfully")
 
         except sqlite3.Error as e:

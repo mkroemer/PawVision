@@ -2,4 +2,6 @@ Flask==3.0.3
 gpiozero==2.0.1
 Werkzeug==3.0.4
 yt-dlp==2024.7.25
-requests==2.31.0
+requests>=2.32.2
+moviepy>=1.0.3
+

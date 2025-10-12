@@ -20,6 +20,7 @@ class PawVisionConfig:
     night_mode_start: str = "22:00"
     night_mode_end: str = "06:00"
     night_mode_disable_playback: bool = False  # Disable all playback during night mode
+    night_mode_volume: int = 30  # Volume level during night mode (when playback is not disabled)
 
     # Button settings (HH:MM string format only)
     button_enabled: bool = True
@@ -41,12 +42,10 @@ class PawVisionConfig:
 
     # Statistics settings
     enable_statistics: bool = True
-    statistics_file: Optional[str] = None
+    statistics_file: Optional[str] = None  # Deprecated - kept for backward compatibility
     statistics_db: Optional[str] = None
 
-    # Performance settings
-    enable_duration_cache: bool = True
-    cache_file: Optional[str] = None
+    # Database settings
     database_path: Optional[str] = None  # Unified database path for video library and statistics
 
     # YouTube settings
@@ -156,12 +155,10 @@ class ConfigManager:
                 if self.dev_mode:
                     data.setdefault("statistics_file", "./pawvision_stats.json")
                     data.setdefault("statistics_db", "./pawvision_stats.db")
-                    data.setdefault("cache_file", "./pawvision_cache.json")
                     data.setdefault("database_path", "./pawvision.db")
                 else:
                     data.setdefault("statistics_file", "/home/pi/pawvision_stats.json")
                     data.setdefault("statistics_db", "/home/pi/pawvision_stats.db")
-                    data.setdefault("cache_file", "/home/pi/pawvision_cache.json")
                     data.setdefault("database_path", "/home/pi/pawvision.db")
 
                 config = PawVisionConfig(**data)
@@ -178,12 +175,10 @@ class ConfigManager:
                 if self.dev_mode:
                     config.statistics_file = "./pawvision_stats.json"
                     config.statistics_db = "./pawvision_stats.db"
-                    config.cache_file = "./pawvision_cache.json"
                     config.database_path = "./pawvision.db"
                 else:
                     config.statistics_file = "/home/pi/pawvision_stats.json"
                     config.statistics_db = "/home/pi/pawvision_stats.db"
-                    config.cache_file = "/home/pi/pawvision_cache.json"
                     config.database_path = "/home/pi/pawvision.db"
 
                 self.save_config(config)
@@ -204,14 +199,11 @@ class ConfigManager:
             if self.dev_mode:
                 config.statistics_file = "./pawvision_stats.json"
                 config.statistics_db = "./pawvision_stats.db"
-                config.cache_file = "./pawvision_cache.json"
                 config.database_path = "./pawvision.db"
             else:
                 config.statistics_file = "/home/pi/pawvision_stats.json"
                 config.statistics_db = "/home/pi/pawvision_stats.db"
-                config.cache_file = "/home/pi/pawvision_cache.json"
                 config.database_path = "/home/pi/pawvision.db"
-                config.cache_file = "/home/pi/pawvision_cache.json"
 
             self.save_config(config)
             return config

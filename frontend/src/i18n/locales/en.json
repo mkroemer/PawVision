@@ -1,0 +1,94 @@
+{
+  "app": {
+    "title": "PawVision Dashboard",
+    "error": "An unexpected error occurred",
+    "loading": "Loading..."
+  },
+  "nav": {
+    "control": "Control",
+    "library": "Video Library",
+    "statistics": "Statistics",
+    "config": "Configuration"
+  },
+  "control": {
+    "title": "Control Center",
+    "play": "Play",
+    "stop": "Stop",
+    "pause": "Pause",
+    "resume": "Resume",
+    "volume": "Volume",
+    "status": "Status",
+    "playing": "Playing",
+    "stopped": "Stopped",
+    "paused": "Paused"
+  },
+  "library": {
+    "title": "Video Library",
+    "upload": "Upload Video",
+    "youtube": "Download from YouTube",
+    "noVideos": "No videos in library",
+    "addFirst": "Add your first video to get started",
+    "delete": "Delete",
+    "play": "Play",
+    "duration": "Duration",
+    "source": "Source"
+  },
+  "youtube": {
+    "title": "Download from YouTube",
+    "url": "YouTube URL",
+    "urlPlaceholder": "https://www.youtube.com/watch?v=...",
+    "download": "Download",
+    "downloading": "Downloading...",
+    "progress": "Progress",
+    "cancel": "Cancel"
+  },
+  "statistics": {
+    "title": "Statistics",
+    "totalPlays": "Total Plays",
+    "totalDuration": "Total Duration",
+    "favoriteVideo": "Favorite Video",
+    "playsByDay": "Plays by Day",
+    "playsByVideo": "Plays by Video",
+    "reset": "Reset Statistics"
+  },
+  "config": {
+    "title": "Configuration",
+    "general": "General Settings",
+    "gpio": "GPIO Settings",
+    "youtube": "YouTube Settings",
+    "schedule": "Schedule Settings",
+    "save": "Save Changes",
+    "reset": "Reset to Defaults",
+    "testGpio": "Test GPIO",
+    "autoPlay": "Auto Play",
+    "volume": "Default Volume",
+    "quality": "Video Quality",
+    "scheduleEnabled": "Enable Schedule",
+    "scheduleStart": "Start Time",
+    "scheduleEnd": "End Time"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "actions": "Actions"
+  },
+  "messages": {
+    "success": "Operation successful",
+    "error": "Operation failed",
+    "deleteConfirm": "Are you sure you want to delete this?",
+    "saveSuccess": "Settings saved successfully",
+    "uploadSuccess": "Video uploaded successfully",
+    "uploadError": "Failed to upload video",
+    "downloadSuccess": "Download completed",
+    "downloadError": "Download failed"
+  }
+}

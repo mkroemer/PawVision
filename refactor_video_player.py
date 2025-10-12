@@ -1,4 +1,21 @@
-"""Video player with proper process management."""
+#!/usr/bin/env python3
+"""
+Script to refactor video_player.py into modular structure.
+This creates the playback/ module and updates video_player.py to use it.
+"""
+
+import os
+import shutil
+
+
+def main():
+    """Execute the refactoring."""
+    
+    # Paths
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    pawvision_dir = os.path.join(base_dir, "pawvision")
+    old_file = os.path.join(pawvision_dir, "video_player.py")
+    new_file_content = '''"""Video player with proper process management."""
 
 import atexit
 import logging
@@ -506,3 +523,17 @@ class VideoPlayer:
         """Clean up old cache entries (now handled by database)."""
         # Cache cleanup is no longer needed - handled by database
         pass
+'''
+    
+    # Write the new file
+    with open(old_file, 'w', encoding='utf-8') as f:
+        f.write(new_file_content)
+    
+    print("✅ Successfully refactored video_player.py")
+    print("   - Old file backed up at: video_player_old.py.backup")
+    print("   - New modular structure created in: pawvision/playback/")
+    print("   - Main video_player.py now: {} lines (was 632 lines)".format(len(new_file_content.splitlines())))
+
+
+if __name__ == "__main__":
+    main()

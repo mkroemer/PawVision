@@ -5,6 +5,7 @@ import os
 import re
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
+from urllib.parse import urlparse, parse_qs
 
 try:
     import yt_dlp
@@ -93,6 +94,56 @@ class YouTubeManager:
 
         return None
 
+    def extract_timestamp_from_url(self, url: str) -> float:
+        """Extract timestamp parameter from YouTube URL.
+        
+        Supports formats like:
+        - ?t=906s (906 seconds)
+        - ?t=15m6s (15 minutes 6 seconds)
+        - ?t=1h30m (1 hour 30 minutes)
+        - ?t=906 (906 seconds, no suffix)
+        
+        Returns:
+            float: Start time in seconds, or 0.0 if no timestamp found
+        """
+        try:
+            parsed = urlparse(url)
+            params = parse_qs(parsed.query)
+            
+            if 't' not in params:
+                return 0.0
+            
+            t_value = params['t'][0]
+            
+            # Parse time value - supports formats like "906s", "15m6s", "1h30m", or just "906"
+            total_seconds = 0.0
+            
+            # Check for hours
+            h_match = re.search(r'(\d+)h', t_value)
+            if h_match:
+                total_seconds += int(h_match.group(1)) * 3600
+            
+            # Check for minutes
+            m_match = re.search(r'(\d+)m', t_value)
+            if m_match:
+                total_seconds += int(m_match.group(1)) * 60
+            
+            # Check for seconds
+            s_match = re.search(r'(\d+)s', t_value)
+            if s_match:
+                total_seconds += int(s_match.group(1))
+            
+            # If no unit suffix found, treat as seconds
+            if not h_match and not m_match and not s_match:
+                if t_value.isdigit():
+                    total_seconds = float(t_value)
+            
+            return total_seconds
+            
+        except Exception as e:  # noqa: BLE001
+            self.logger.warning("Failed to extract timestamp from URL %s: %s", url, e)
+            return 0.0
+
     def get_video_info(self, url: str) -> Optional[Dict]:
         """Get video information from YouTube."""
         if not YT_DLP_AVAILABLE:
@@ -121,9 +172,9 @@ class YouTubeManager:
                     "formats": info.get("formats", []),
                 }
 
-        except ExtractorError as e:
+        except (ExtractorError, DownloadError) as e:
             error_msg = str(e)
-            if "Sign in" in error_msg or "bot" in error_msg.lower():
+            if isinstance(e, ExtractorError) and ("Sign in" in error_msg or "bot" in error_msg.lower()):
                 self.logger.error(
                     "YouTube bot detection triggered for %s. "
                     "To fix this: 1) Update yt-dlp (pip install -U yt-dlp), "
@@ -132,13 +183,12 @@ class YouTubeManager:
                     video_id,
                     self.cache_dir
                 )
+            elif isinstance(e, DownloadError):
+                self.logger.error("Download error for %s: %s", video_id, e)
             else:
                 self.logger.error("Error extracting video info for %s: %s", video_id, error_msg)
             return None
-        except DownloadError as e:
-            self.logger.error("Download error for %s: %s", video_id, e)
-            return None
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             self.logger.error("Unexpected error extracting video info for %s: %s", video_id, e)
             return None
 
@@ -319,6 +369,13 @@ class YouTubeManager:
         if not video_id:
             self.logger.error("Invalid YouTube URL: %s", url)
             return None
+
+        # Extract timestamp from URL if present (e.g., ?t=906s)
+        # Only use URL timestamp if custom_start_time was not explicitly provided
+        url_timestamp = self.extract_timestamp_from_url(url)
+        if custom_start_time == 0.0 and url_timestamp > 0.0:
+            custom_start_time = url_timestamp
+            self.logger.info("Using timestamp from URL: %.1f seconds", url_timestamp)
 
         # Get video info
         info = self.get_video_info(url)

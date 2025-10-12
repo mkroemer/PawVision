@@ -17,7 +17,7 @@ class SecurityValidator:
         ".m4v",
         ".webm",
     }
-    MAX_FILE_SIZE: int = 500 * 1024 * 1024  # 500MB
+    MAX_FILE_SIZE: int = 5 * 1024 * 1024 * 1024  # 5GB (for large 4K video files)
     MAX_FILENAME_LENGTH: int = 255
 
     def __init__(self):
@@ -61,9 +61,9 @@ class SecurityValidator:
             file.seek(0)  # Seek back to start
 
             if size > self.MAX_FILE_SIZE:
-                size_mb = size / (1024 * 1024)
-                max_mb = self.MAX_FILE_SIZE / (1024 * 1024)
-                return False, f"File too large: {size_mb:.1f}MB > {max_mb}MB"
+                size_gb = size / (1024 * 1024 * 1024)
+                max_gb = self.MAX_FILE_SIZE / (1024 * 1024 * 1024)
+                return False, f"File too large: {size_gb:.2f}GB exceeds maximum of {max_gb:.0f}GB"
         except (OSError, AttributeError) as e:
             self.logger.warning("Could not check file size: %s", e)
 

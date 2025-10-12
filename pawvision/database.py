@@ -28,6 +28,7 @@ class VideoEntry:
     # File metadata (for local files)
     size: Optional[int] = None  # File size in bytes
     modified_time: Optional[float] = None  # File modification timestamp
+    thumbnail_path: Optional[str] = None  # Path to thumbnail image
 
     # YouTube-specific fields
     is_youtube: bool = False
@@ -152,6 +153,7 @@ class PawVisionDatabase:
                         duration REAL,
                         size INTEGER,
                         modified_time REAL,
+                        thumbnail_path TEXT,
                         is_youtube INTEGER DEFAULT 0,
                         youtube_id TEXT,
                         youtube_url TEXT,
@@ -167,6 +169,15 @@ class PawVisionDatabase:
                     )
                 """
                 )
+
+                # Add thumbnail_path column if it doesn't exist (migration for existing databases)
+                try:
+                    conn.execute("ALTER TABLE videos ADD COLUMN thumbnail_path TEXT")
+                    conn.commit()
+                    self.logger.info("Added thumbnail_path column to videos table")
+                except sqlite3.OperationalError:
+                    # Column already exists
+                    pass
 
                 # Create indexes for common queries
                 conn.execute("CREATE INDEX IF NOT EXISTS idx_is_youtube ON videos(is_youtube)")
@@ -208,6 +219,7 @@ class PawVisionDatabase:
                         "duration": video_entry.duration,
                         "size": video_entry.size,
                         "modified_time": video_entry.modified_time,
+                        "thumbnail_path": video_entry.thumbnail_path,
                         "is_youtube": 1 if video_entry.is_youtube else 0,
                         "youtube_id": video_entry.youtube_id,
                         "youtube_url": video_entry.youtube_url,
@@ -232,12 +244,12 @@ class PawVisionDatabase:
                         """
                         INSERT OR REPLACE INTO videos (
                             path, title, custom_start_time, custom_end_time, duration,
-                            size, modified_time, is_youtube, youtube_id, youtube_url,
+                            size, modified_time, thumbnail_path, is_youtube, youtube_id, youtube_url,
                             stream_url, stream_expires, download_path, quality,
                             added_time, last_played, play_count, tags, notes
                         ) VALUES (
                             :path, :title, :custom_start_time, :custom_end_time, :duration,
-                            :size, :modified_time, :is_youtube, :youtube_id, :youtube_url,
+                            :size, :modified_time, :thumbnail_path, :is_youtube, :youtube_id, :youtube_url,
                             :stream_url, :stream_expires, :download_path, :quality,
                             :added_time, :last_played, :play_count, :tags, :notes
                         )
