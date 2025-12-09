@@ -7,7 +7,7 @@ set -e
 # ---------------- CONFIG ----------------
 REPO_USER="mkroemer"
 REPO_NAME="pawvision"
-BRANCH="main"
+BRANCH="dev"
 INSTALL_DIR="/home/pi"
 VIDEO_DIR="/media"
 SETTINGS_FILE="$INSTALL_DIR/pawvision_settings.json"
