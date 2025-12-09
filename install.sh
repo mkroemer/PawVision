@@ -96,30 +96,135 @@ if [ -d "templates" ]; then
 else
     echo "No templates directory found - creating fallback template"
     mkdir -p "$INSTALL_DIR/templates"
-    cat > "$INSTALL_DIR/templates/index.html" << 'EOF'
+fi
+
+# Always ensure we have a working index.html template
+cat > "$INSTALL_DIR/templates/index.html" << 'EOF'
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PawVision</title>
-    <link rel="icon" type="image/png" href="/static/dist/pawvision.png">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .header { text-align: center; margin-bottom: 40px; }
+        .logo { font-size: 48px; margin-bottom: 10px; }
+        h1 { color: #333; margin: 0; font-size: 36px; }
+        .subtitle { color: #666; margin-top: 10px; }
+        .status { padding: 15px; margin: 20px 0; border-radius: 8px; display: flex; align-items: center; }
+        .success { background: #d4edda; color: #155724; border-left: 4px solid #28a745; }
+        .info { background: #d1ecf1; color: #0c5460; border-left: 4px solid #17a2b8; }
+        .warning { background: #fff3cd; color: #856404; border-left: 4px solid #ffc107; }
+        .icon { font-size: 20px; margin-right: 10px; }
+        .section { margin: 30px 0; }
+        .api-list { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .api-item { font-family: monospace; background: #e9ecef; padding: 8px 12px; margin: 5px 0; border-radius: 4px; }
+        .footer { text-align: center; margin-top: 40px; color: #666; font-size: 14px; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+    </style>
 </head>
 <body>
-    <div id="root"></div>
-    <script type="module" src="/static/dist/assets/index.js"></script>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🐾</div>
+            <h1>PawVision</h1>
+            <div class="subtitle">Pet Video Management System</div>
+        </div>
+        
+        <div class="status success">
+            <span class="icon">✅</span>
+            <div>PawVision is running successfully on your Raspberry Pi!</div>
+        </div>
+        
+        <div class="status info">
+            <span class="icon">📱</span>
+            <div>Basic interface active - React frontend can be built for full features</div>
+        </div>
+        
+        <div class="section">
+            <h2>🎯 Quick Actions</h2>
+            <button onclick="location.reload()">🔄 Refresh Status</button>
+            <button onclick="window.open('/api/videos', '_blank')">📁 View Videos API</button>
+            <button onclick="window.open('/api/config', '_blank')">⚙️ View Config API</button>
+        </div>
+        
+        <div class="section">
+            <h2>📊 System Status</h2>
+            <div><strong>Service:</strong> Active and Running</div>
+            <div><strong>Video Directory:</strong> /home/pi/videos</div>
+            <div><strong>Configuration:</strong> /home/pi/pawvision_settings.json</div>
+            <div><strong>Web Interface:</strong> http://10.10.0.40:5000</div>
+        </div>
+        
+        <div class="section">
+            <h2>🔌 Available APIs</h2>
+            <div class="api-list">
+                <div class="api-item">GET /api/videos - List all videos</div>
+                <div class="api-item">GET /api/config - View configuration</div>
+                <div class="api-item">POST /api/config - Update configuration</div>
+                <div class="api-item">GET /api/statistics - View playback statistics</div>
+                <div class="api-item">POST /api/playback/play - Start video playback</div>
+                <div class="api-item">POST /api/playback/stop - Stop playback</div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>🚀 Next Steps</h2>
+            <div class="status warning">
+                <span class="icon">⚡</span>
+                <div>
+                    <strong>Build Full Frontend:</strong><br>
+                    • Run <code>cd /tmp/PawVision/frontend && npm install && npm run build</code><br>
+                    • Copy build files to <code>/home/pi/static/</code><br>
+                    • Restart service for full React interface
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            PawVision v1.0 - Running on Raspberry Pi<br>
+            <small>For support and updates, visit the GitHub repository</small>
+        </div>
+    </div>
+    
+    <script>
+        // Auto-refresh every 30 seconds to show any updates
+        setTimeout(() => location.reload(), 30000);
+    </script>
 </body>
 </html>
 EOF
+
+# Handle frontend and static files
+echo "🎨 Setting up frontend and static assets..."
+mkdir -p "$INSTALL_DIR/static"
+
+# Copy existing static files if available
+if [ -d "static" ]; then
+    cp -r static/* "$INSTALL_DIR/static/" 2>/dev/null && echo "✅ Static files copied"
+else
+    echo "📝 No pre-built static files found"
 fi
 
-# Copy static directory (includes built frontend)
-echo "🎨 Copying static assets and frontend..."
-if [ -d "static" ]; then
-    cp -r static/* "$INSTALL_DIR/static/" 2>/dev/null || echo "Static directory exists but is empty"
+# Try to build frontend if Node.js is available and frontend directory exists
+if [ -d "frontend" ] && command -v npm >/dev/null 2>&1; then
+    echo "🔨 Node.js detected - attempting to build frontend..."
+    cd frontend
+    if npm install --production 2>/dev/null && npm run build 2>/dev/null; then
+        echo "✅ Frontend built successfully"
+        if [ -d "dist" ]; then
+            cp -r dist/* "$INSTALL_DIR/static/" 2>/dev/null
+            echo "✅ Frontend deployed to static directory"
+        fi
+    else
+        echo "⚠️  Frontend build failed - using fallback interface"
+    fi
+    cd ..
 else
-    echo "⚠️  No static directory found - frontend may not work properly"
-    mkdir -p "$INSTALL_DIR/static"
+    echo "📝 Node.js not available or no frontend directory - using fallback interface"
 fi
 
 # Copy any other important files
