@@ -230,15 +230,17 @@ if [ -d "$REPO_DIR/frontend" ]; then
         cd "$REPO_DIR/frontend"
         
         # Install dependencies
-        if npm install 2>/dev/null; then
+        if npm ci 2>/dev/null || npm install 2>/dev/null; then
             echo "✅ Frontend dependencies installed"
             
             # Build the frontend
             if npm run build 2>/dev/null; then
                 echo "✅ Frontend built successfully"
                 
-                # Deploy built files
-                if [ -d "dist" ]; then
+                # Deploy built files (Vite builds to ../static/dist)
+                if [ -d "../static/dist" ]; then
+                    cp -r ../static/dist/* "$INSTALL_DIR/static/" 2>/dev/null && echo "✅ Frontend deployed to static directory"
+                elif [ -d "dist" ]; then
                     cp -r dist/* "$INSTALL_DIR/static/" 2>/dev/null && echo "✅ Frontend deployed to static directory"
                 elif [ -d "build" ]; then
                     cp -r build/* "$INSTALL_DIR/static/" 2>/dev/null && echo "✅ Frontend deployed to static directory"

@@ -19,23 +19,18 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '20'
-        cache: 'pnpm'
-        cache-dependency-path: 'frontend/pnpm-lock.yaml'
-    
-    - name: Install pnpm
-      uses: pnpm/action-setup@v2
-      with:
-        version: 8
+        cache: 'npm'
+        cache-dependency-path: 'frontend/package-lock.json'
     
     - name: Install frontend dependencies
       run: |
         cd frontend
-        pnpm install
+        npm ci
     
     - name: Build frontend
       run: |
         cd frontend
-        pnpm run build
+        npm run build
     
     - name: Create static directory structure
       run: |
