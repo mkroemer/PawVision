@@ -33,6 +33,7 @@ class PawVisionApp:
         self.web_interface = None
         self.web_thread = None
         self.running = False
+        self._shutting_down = False
 
         # Register cleanup
         atexit.register(self.cleanup)
@@ -41,9 +42,15 @@ class PawVisionApp:
 
     def _signal_handler(self, signum, _frame):
         """Handle shutdown signals."""
+        if self._shutting_down:
+            # Already shutting down, force exit
+            sys.exit(1)
+        
+        self._shutting_down = True
         if self.logger:
             self.logger.info("Received signal %d, shutting down...", signum)
         self.stop()
+        sys.exit(0)
 
     def initialize(self):
         """Initialize all components."""
@@ -292,7 +299,7 @@ def detect_dev_mode():
 
     # Check if gpiozero is available
     try:
-        import gpiozero
+        import gpiozero  # noqa: F401
         return False  # GPIO library available, likely Pi
     except ImportError:
         return True  # No GPIO library, likely dev environment

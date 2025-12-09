@@ -22,7 +22,7 @@ export default function StatisticsPage() {
     <div className="space-y-6">
       <div>
         <h2 className="text-3xl font-bold tracking-tight">{t('statistics.title')}</h2>
-        <p className="text-muted-foreground">View your playback statistics</p>
+        <p className="text-muted-foreground">{t('statistics.description')}</p>
       </div>
 
       {/* Summary Cards */}
@@ -36,7 +36,7 @@ export default function StatisticsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{summary?.total_plays || 0}</div>
-            <p className="text-xs text-muted-foreground">All time</p>
+            <p className="text-xs text-muted-foreground">{t('statistics.allTime')}</p>
           </CardContent>
         </Card>
 
@@ -51,18 +51,18 @@ export default function StatisticsPage() {
             <div className="text-2xl font-bold">
               {summary ? formatDuration(summary.total_duration) : '0:00'}
             </div>
-            <p className="text-xs text-muted-foreground">Viewing time</p>
+            <p className="text-xs text-muted-foreground">{t('statistics.viewingTime')}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Videos</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('statistics.totalVideos')}</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{summary?.total_videos || 0}</div>
-            <p className="text-xs text-muted-foreground">In library</p>
+            <p className="text-xs text-muted-foreground">{t('statistics.inLibrary')}</p>
           </CardContent>
         </Card>
       </div>
@@ -71,12 +71,12 @@ export default function StatisticsPage() {
       <Card>
         <CardHeader>
           <CardTitle>{t('statistics.playsByDay')}</CardTitle>
-          <CardDescription>Your pet's viewing activity over the last 30 days</CardDescription>
+          <CardDescription>{t('statistics.playsByDayDescription')}</CardDescription>
         </CardHeader>
         <CardContent>
           {playsByDay.length === 0 ? (
             <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-              No playback data available yet
+              {t('statistics.noDataYet')}
             </div>
           ) : (
             <ChartContainer
@@ -116,12 +116,12 @@ export default function StatisticsPage() {
       <Card>
         <CardHeader>
           <CardTitle>{t('statistics.playsByVideo')}</CardTitle>
-          <CardDescription>Most popular videos (top 10)</CardDescription>
+          <CardDescription>{t('statistics.playsByVideoDescription')}</CardDescription>
         </CardHeader>
         <CardContent>
           {playsByVideo.length === 0 ? (
             <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-              No playback data available yet
+              {t('statistics.noDataYet')}
             </div>
           ) : (
             <ChartContainer

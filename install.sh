@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# PawVision Installation Script for Raspberry Pi
+# Updated to handle modern Raspberry Pi OS compatibility issues
+
 # ---------------- CONFIG ----------------
 REPO_USER="mkroemer"
 REPO_NAME="pawvision"
@@ -26,8 +29,22 @@ fi
 # Update system
 sudo apt update && sudo apt upgrade -y
 
-# Install dependencies
-sudo apt install -y python3 python3-pip python3-venv mpv sqlite3 git mediainfo usbmount curl
+# Install dependencies - handle usbmount separately as it's not available on newer Pi OS versions
+echo "📦 Installing system dependencies..."
+sudo apt install -y python3 python3-pip python3-venv mpv sqlite3 git mediainfo curl
+
+# Try to install usbmount, but don't fail if it's not available
+echo "🔌 Attempting to install USB mount support..."
+if sudo apt install -y usbmount 2>/dev/null; then
+    echo "✅ USB mount support installed"
+else
+    echo "⚠️  USB mount package not available - USB auto-mounting may not work"
+    echo "   You can manually mount USB drives to /media/usb if needed"
+fi
+
+# Install VLC for video playback support
+echo "📺 Installing VLC components..."
+sudo apt install -y vlc-bin vlc-plugin-base libvlc-dev
 
 # Create virtual environment for better dependency isolation
 echo "🐍 Setting up Python virtual environment..."
@@ -49,7 +66,13 @@ echo "📦 Installing Python dependencies..."
 curl -o "$INSTALL_DIR/requirements.txt" \
     -L "https://raw.githubusercontent.com/$REPO_USER/$REPO_NAME/$BRANCH/requirements.txt"
 source "$INSTALL_DIR/venv/bin/activate"
-pip install -r "$INSTALL_DIR/requirements.txt"
+echo "📦 Installing Python dependencies (this may take a while)..."
+if pip install -r "$INSTALL_DIR/requirements.txt"; then
+    echo "✅ Python dependencies installed successfully"
+else
+    echo "❌ Error installing Python dependencies. Trying with --break-system-packages..."
+    pip install -r "$INSTALL_DIR/requirements.txt" --break-system-packages
+fi
 
 # Clone the entire repository to get all files
 echo "📥 Downloading latest PawVision files..."
@@ -68,11 +91,36 @@ cp -r pawvision/ "$INSTALL_DIR/" 2>/dev/null || echo "No pawvision module found"
 
 # Copy templates directory
 echo "📄 Copying templates..."
-cp -r templates/* "$INSTALL_DIR/templates/" 2>/dev/null || echo "No template files found"
+if [ -d "templates" ]; then
+    cp -r templates/* "$INSTALL_DIR/templates/" 2>/dev/null || echo "Template directory exists but is empty"
+else
+    echo "No templates directory found - creating fallback template"
+    mkdir -p "$INSTALL_DIR/templates"
+    cat > "$INSTALL_DIR/templates/index.html" << 'EOF'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PawVision</title>
+    <link rel="icon" type="image/png" href="/static/dist/pawvision.png">
+</head>
+<body>
+    <div id="root"></div>
+    <script type="module" src="/static/dist/assets/index.js"></script>
+</body>
+</html>
+EOF
+fi
 
-# Copy static directory
-echo "🎨 Copying static assets..."
-cp -r static/* "$INSTALL_DIR/static/" 2>/dev/null || echo "No static files found"
+# Copy static directory (includes built frontend)
+echo "🎨 Copying static assets and frontend..."
+if [ -d "static" ]; then
+    cp -r static/* "$INSTALL_DIR/static/" 2>/dev/null || echo "Static directory exists but is empty"
+else
+    echo "⚠️  No static directory found - frontend may not work properly"
+    mkdir -p "$INSTALL_DIR/static"
+fi
 
 # Copy any other important files
 cp requirements.txt "$INSTALL_DIR/" 2>/dev/null || echo "No requirements.txt found"
@@ -124,10 +172,39 @@ fi
 echo "🧪 Testing PawVision installation..."
 source "$INSTALL_DIR/venv/bin/activate"
 cd "$INSTALL_DIR"
-python3 -c "import pawvision; print('✅ PawVision module loads successfully')" || echo "⚠️  Warning: PawVision module test failed"
 
-# Restart service to apply updates
-sudo systemctl restart pawvision
+# Test Python module import
+if python3 -c "import pawvision; print('✅ PawVision module loads successfully')" 2>/dev/null; then
+    echo "✅ Module test passed"
+else
+    echo "⚠️  Warning: PawVision module test failed - checking dependencies..."
+    python3 -c "
+import sys
+try:
+    import flask
+    print('✅ Flask available')
+except ImportError:
+    print('❌ Flask not available')
+try:
+    import vlc
+    print('✅ VLC bindings available') 
+except ImportError:
+    print('❌ VLC Python bindings not available')
+"
+fi
+
+# Only restart service if it exists and we're updating
+if systemctl is-active --quiet pawvision 2>/dev/null; then
+    echo "🔄 Restarting PawVision service..."
+    sudo systemctl restart pawvision
+elif $FRESH_INSTALL; then
+    echo "🚀 Starting PawVision service for the first time..."
+    sudo systemctl start pawvision
+fi
+
+# Check service status
+echo "📊 Service status:"
+sudo systemctl status pawvision --no-pager --lines=3 || echo "Service not running - check logs with: journalctl -u pawvision -f"
 
 if $FRESH_INSTALL; then
     echo "✅ PawVision installation complete!"

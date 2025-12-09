@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { videoService } from '@/services/videoService';
 import type { PlaybackStatus } from '@/types';
 
-export const usePlaybackStatus = (autoRefresh = true, interval = 30000) => {
+export const usePlaybackStatus = (autoRefresh = true, interval = 5000) => {
   const [status, setStatus] = useState<PlaybackStatus>({ is_playing: false });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -29,6 +29,20 @@ export const usePlaybackStatus = (autoRefresh = true, interval = 30000) => {
       return () => clearInterval(intervalId);
     }
   }, [fetchStatus, autoRefresh, interval]);
+
+  // Refetch when page becomes visible again (tab switching)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchStatus();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [fetchStatus]);
 
   return { status, loading, error, refetch: fetchStatus };
 };

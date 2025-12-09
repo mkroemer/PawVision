@@ -95,6 +95,7 @@ class WebInterface:
             config_routes,
             statistics_routes,
             dev_routes,
+            stream_routes,
         )
 
         # Create app context dict to pass to blueprints
@@ -126,6 +127,9 @@ class WebInterface:
         
         self.app.register_blueprint(statistics_routes.init_statistics_routes(app_context))
         self.logger.debug("Registered statistics routes")
+        
+        self.app.register_blueprint(stream_routes.init_stream_routes(app_context))
+        self.logger.debug("Registered stream routes")
         
         # Register dev routes only in dev mode
         if getattr(self.config, "dev_mode", False):

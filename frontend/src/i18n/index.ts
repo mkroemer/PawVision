@@ -3,13 +3,14 @@ import { initReactI18next } from 'react-i18next';
 
 // Import translation files
 import en from './locales/en.json';
+import de from './locales/de.json';
 
 const resources = {
   en: {
     translation: en,
   },
   de: {
-    translation: en, // Use English for now, German translations can be added later
+    translation: de,
   },
 };
 

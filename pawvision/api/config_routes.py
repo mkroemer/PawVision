@@ -50,6 +50,8 @@ def init_config_routes(app_context):
             # Update config values
             if 'gpio_enabled' in data:
                 config.button_enabled = data['gpio_enabled']
+            if 'auto_play' in data:
+                config.auto_play = bool(data['auto_play'])
             if 'volume' in data:
                 config.volume = max(0, min(100, int(data['volume'])))
             if 'playback_duration_minutes' in data:

@@ -49,10 +49,12 @@ class PawVisionConfig:
     database_path: Optional[str] = None  # Unified database path for video library and statistics
 
     # YouTube settings
-    youtube_cache_dir: str = "youtube_cache"  # Directory for YouTube metadata cache
-    youtube_download_dir: str = "youtube_downloads"  # Directory for downloaded YouTube videos
+    youtube_cache_dir: str = "./videos/youtube_cache"  # Directory for YouTube cookies (for authentication)
     youtube_default_quality: str = "720p"  # Default quality for YouTube videos
     youtube_auto_refresh_streams: bool = True  # Auto-refresh expired stream URLs
+    
+    # Playback settings
+    auto_play: bool = False  # Automatically play videos when they finish
 
     def __post_init__(self):
         """Initialize default values and validate configuration."""

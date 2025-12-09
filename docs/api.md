@@ -79,6 +79,102 @@ Get current playback status.
 
 ---
 
+## Video Streaming Endpoints
+
+### Stream Current Video
+Stream the video that's currently playing on the HDMI screen. Supports HTTP range requests for seeking.
+
+**Endpoint:** `GET /api/stream/current`
+
+**Headers:**
+- `Range` (optional): Byte range for seeking (e.g., "bytes=0-1023")
+
+**Response (Local Video):**
+- Content-Type: `video/mp4`, `video/webm`, etc. (based on file extension)
+- Status: `200 OK` for full file, `206 Partial Content` for range requests
+- Headers:
+  - `Content-Length`: Size of content
+  - `Accept-Ranges`: bytes
+  - `Content-Range`: Byte range (for 206 responses)
+
+**Response (YouTube Video - Redirect):**
+```json
+{
+  "stream_url": "https://youtube.stream.url",
+  "video_info": {
+    "title": "Video Title",
+    "duration": 120.5,
+    "playback_time": 45.2
+  },
+  "redirect": true
+}
+```
+
+**Response (No Video Playing):**
+```json
+{
+  "error": "No video currently playing",
+  "playing": false
+}
+```
+
+**Status Codes:**
+- `200 OK` - Full video stream or redirect info
+- `206 Partial Content` - Range request successful
+- `404 Not Found` - No video playing or file not found
+- `416 Range Not Satisfiable` - Invalid range request
+- `503 Service Unavailable` - YouTube stream not available
+
+**Example Usage:**
+```html
+<video controls>
+  <source src="http://pi-address:5001/api/stream/current" type="video/mp4">
+</video>
+```
+
+---
+
+### Get Stream Info
+Get information about the current video stream without actually streaming the content.
+
+**Endpoint:** `GET /api/stream/info`
+
+**Response:**
+```json
+{
+  "playing": true,
+  "video": {
+    "path": "/videos/catvideo.mp4",
+    "title": "Cat Video",
+    "duration": 120.5,
+    "playback_time": 45.2,
+    "is_youtube": false,
+    "started_at": "2025-10-12T14:30:00"
+  },
+  "streamable": true,
+  "stream_type": "local"
+}
+```
+
+**Response (No Video Playing):**
+```json
+{
+  "playing": false,
+  "video": null
+}
+```
+
+**Status Codes:**
+- `200 OK` - Stream info retrieved successfully
+- `500 Internal Server Error` - Failed to get stream info
+
+**Stream Types:**
+- `local` - Video file can be streamed directly
+- `redirect` - YouTube video, use redirect URL from `/api/stream/current`
+- `null` - Video cannot be streamed
+
+---
+
 ## Video Library Endpoints
 
 ### Get Video Library

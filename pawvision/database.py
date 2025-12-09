@@ -478,6 +478,7 @@ class PawVisionDatabase:
             stream_expires=stream_expires,
             download_path=row["download_path"],
             quality=row["quality"],
+            thumbnail_path=row["thumbnail_path"],
             added_time=added_time,
             last_played=last_played,
             play_count=row["play_count"] or 0,

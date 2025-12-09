@@ -3,6 +3,7 @@
 import logging
 import os
 import re
+import requests
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 from urllib.parse import urlparse, parse_qs
@@ -161,6 +162,27 @@ class YouTubeManager:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=False)
 
+                # Get thumbnail URL (prefer higher quality)
+                thumbnail_url = None
+                if info.get("thumbnails"):
+                    # Get the best quality thumbnail
+                    thumbnails = info["thumbnails"]
+                    # Sort by width (if available) to get highest quality
+                    sorted_thumbs = sorted(
+                        [t for t in thumbnails if t.get("width")],
+                        key=lambda x: x.get("width", 0),
+                        reverse=True
+                    )
+                    if sorted_thumbs:
+                        thumbnail_url = sorted_thumbs[0].get("url")
+                    elif thumbnails:
+                        # Fallback to first thumbnail if no width info
+                        thumbnail_url = thumbnails[0].get("url")
+                
+                # Fallback to standard YouTube thumbnail URL if not in info
+                if not thumbnail_url:
+                    thumbnail_url = f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg"
+
                 return {
                     "id": video_id,
                     "title": info.get("title", f"YouTube Video {video_id}"),
@@ -170,6 +192,7 @@ class YouTubeManager:
                     "description": info.get("description", ""),
                     "view_count": info.get("view_count"),
                     "formats": info.get("formats", []),
+                    "thumbnail_url": thumbnail_url,
                 }
 
         except (ExtractorError, DownloadError) as e:
@@ -190,6 +213,48 @@ class YouTubeManager:
             return None
         except Exception as e:  # noqa: BLE001
             self.logger.error("Unexpected error extracting video info for %s: %s", video_id, e)
+            return None
+
+    def download_thumbnail(self, video_id: str, thumbnail_url: str = None) -> Optional[str]:
+        """Download YouTube video thumbnail.
+        
+        Args:
+            video_id: YouTube video ID
+            thumbnail_url: Direct thumbnail URL (if None, will construct default)
+            
+        Returns:
+            Path to downloaded thumbnail file, or None if download failed
+        """
+        # Use provided URL or construct default high-quality thumbnail URL
+        if not thumbnail_url:
+            thumbnail_url = f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg"
+        
+        # Create thumbnails directory
+        thumbnail_dir = os.path.join(self.video_directories[0] if self.video_directories else "./videos", "thumbnails")
+        os.makedirs(thumbnail_dir, exist_ok=True)
+        
+        # Output path for thumbnail
+        thumbnail_path = os.path.join(thumbnail_dir, f"{video_id}.jpg")
+        
+        # Skip if thumbnail already exists
+        if os.path.exists(thumbnail_path):
+            self.logger.debug("Thumbnail already exists for %s", video_id)
+            return thumbnail_path
+        
+        try:
+            # Download thumbnail
+            response = requests.get(thumbnail_url, timeout=10)
+            response.raise_for_status()
+            
+            # Save thumbnail
+            with open(thumbnail_path, 'wb') as f:
+                f.write(response.content)
+            
+            self.logger.info("Downloaded thumbnail for %s", video_id)
+            return thumbnail_path
+            
+        except requests.RequestException as e:
+            self.logger.error("Failed to download thumbnail for %s: %s", video_id, e)
             return None
 
     def get_video_title_and_duration(self, url: str) -> Tuple[Optional[str], Optional[int]]:
@@ -392,6 +457,12 @@ class YouTubeManager:
         # Get stream URL
         stream_url, stream_expires = self.get_stream_url(video_id, quality)
 
+        # Download thumbnail
+        thumbnail_path = None
+        thumbnail_url = info.get("thumbnail_url")
+        if thumbnail_url:
+            thumbnail_path = self.download_thumbnail(video_id, thumbnail_url)
+        
         # Download if requested
         download_path = None
         if download:
@@ -411,6 +482,7 @@ class YouTubeManager:
             stream_expires=stream_expires,
             download_path=download_path,
             quality=quality or self.preferred_quality,
+            thumbnail_path=thumbnail_path,
         )
 
         self.logger.info("Created YouTube video entry: %s", entry.get_display_title())

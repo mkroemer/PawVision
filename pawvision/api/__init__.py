@@ -6,6 +6,7 @@ from . import playback_routes
 from . import config_routes
 from . import statistics_routes
 from . import dev_routes
+from . import stream_routes
 
 __all__ = [
     'video_routes',
@@ -14,4 +15,5 @@ __all__ = [
     'config_routes',
     'statistics_routes',
     'dev_routes',
+    'stream_routes',
 ]

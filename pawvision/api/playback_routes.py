@@ -37,26 +37,102 @@ def init_playback_routes(app_context):
     def api_stop():
         """Stop playback."""
         try:
-            video_player.stop_playback()
+            success = video_player.stop_video(reason='web')
 
             if statistics_manager:
                 statistics_manager.record_api_call('stop')
 
-            return jsonify({'status': 'success'}), 200
+            if success:
+                return jsonify({'status': 'success'}), 200
+            else:
+                return jsonify({'status': 'success', 'message': 'No video was playing'}), 200
 
         except Exception as e:
             logger.error('Stop error: %s', e)
             return jsonify({'error': 'Stop failed'}), 500
+
+    @playback_bp.route('/pause', methods=['POST'])
+    def api_pause():
+        """Pause playback."""
+        try:
+            success = video_player.pause_video()
+
+            if statistics_manager:
+                statistics_manager.record_api_call('pause')
+
+            if success:
+                return jsonify({'status': 'success'}), 200
+            else:
+                return jsonify({'error': 'Failed to pause video'}), 500
+
+        except Exception as e:
+            logger.error('Pause error: %s', e)
+            return jsonify({'error': 'Pause failed'}), 500
+
+    @playback_bp.route('/resume', methods=['POST'])
+    def api_resume():
+        """Resume playback."""
+        try:
+            success = video_player.resume_video()
+
+            if statistics_manager:
+                statistics_manager.record_api_call('resume')
+
+            if success:
+                return jsonify({'status': 'success'}), 200
+            else:
+                return jsonify({'error': 'Failed to resume video'}), 500
+
+        except Exception as e:
+            logger.error('Resume error: %s', e)
+            return jsonify({'error': 'Resume failed'}), 500
+
+    @playback_bp.route('/volume', methods=['POST'])
+    def api_volume():
+        """Set volume."""
+        try:
+            volume = request.form.get('volume') or (request.json.get('volume') if request.json else None)
+            
+            if volume is None:
+                return jsonify({'error': 'No volume value provided'}), 400
+
+            try:
+                volume = int(volume)
+            except (ValueError, TypeError):
+                return jsonify({'error': 'Volume must be an integer (0-100)'}), 400
+
+            if not 0 <= volume <= 100:
+                return jsonify({'error': 'Volume must be between 0 and 100'}), 400
+
+            success = video_player.set_volume(volume)
+
+            if statistics_manager:
+                statistics_manager.record_api_call('volume')
+
+            if success:
+                return jsonify({'status': 'success', 'volume': volume}), 200
+            else:
+                return jsonify({'error': 'Failed to set volume'}), 500
+
+        except Exception as e:
+            logger.error('Volume error: %s', e)
+            return jsonify({'error': 'Volume control failed'}), 500
 
     @playback_bp.route('/status')
     def api_status():
         """Get playback status."""
         try:
             is_playing = video_player.is_playing()
-            current_video = video_player.get_current_video()
+            is_paused = video_player.is_paused()
+            current_video = video_player.get_current_video_info()
+
+            logger.debug("Status check - playing: %s, paused: %s, current_video: %s", 
+                        is_playing, is_paused, current_video is not None)
 
             return jsonify({
                 'playing': is_playing,
+                'is_playing': is_playing,  # Support both field names
+                'paused': is_paused,
                 'current_video': current_video,
             }), 200
 

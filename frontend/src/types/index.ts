@@ -6,17 +6,35 @@ export interface Video {
   filename: string;
   path: string;
   duration: number;
+  size: number;
   source: 'local' | 'youtube';
   youtube_url?: string;
+  youtube_id?: string;
+  download_path?: string | null;
   thumbnail?: string;
   added_date: string;
   custom_start_time?: number;
   custom_end_time?: number | null;
 }
 
+export interface CurrentVideoInfo {
+  path: string;
+  title: string;
+  duration: number | null;
+  is_youtube: boolean;
+  youtube_id?: string | null;
+  youtube_url?: string | null;
+  quality?: string | null;
+  custom_start_time?: number;
+  custom_end_time?: number | null;
+  playback_time?: number | null;
+  started_at?: string | null;
+}
+
 export interface PlaybackStatus {
   is_playing: boolean;
-  current_video?: Video;
+  paused?: boolean;
+  current_video?: CurrentVideoInfo | null;
   position?: number;
   volume?: number;
   next_scheduled_play?: string | null;

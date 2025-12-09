@@ -78,7 +78,7 @@ export default function ConfigPage() {
     <div className="space-y-6">
       <div>
         <h2 className="text-3xl font-bold tracking-tight">{t('config.title')}</h2>
-        <p className="text-muted-foreground">Configure PawVision settings</p>
+        <p className="text-muted-foreground">{t('config.description')}</p>
       </div>
 
       <div className="grid gap-6">
@@ -86,14 +86,14 @@ export default function ConfigPage() {
         <Card>
           <CardHeader>
             <CardTitle>{t('config.general')}</CardTitle>
-            <CardDescription>Basic application settings</CardDescription>
+            <CardDescription>{t('config.generalDescription')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label>{t('config.autoPlay')}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Automatically play videos when button is pressed
+                  {t('config.autoPlayDescription')}
                 </p>
               </div>
               <Switch
@@ -122,9 +122,9 @@ export default function ConfigPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>Playback Duration</Label>
+              <Label>{t('config.playbackDuration')}</Label>
               <p className="text-sm text-muted-foreground">
-                How long each video plays when triggered (minutes)
+                {t('config.playbackDurationDescription')}
               </p>
               <div className="flex items-center gap-4">
                 <input
@@ -137,7 +137,7 @@ export default function ConfigPage() {
                   }
                   className="flex-1"
                 />
-                <span className="w-16 text-center">{formData.playback_duration_minutes} min</span>
+                <span className="w-16 text-center">{formData.playback_duration_minutes} {t('common.min')}</span>
               </div>
             </div>
           </CardContent>
@@ -146,13 +146,13 @@ export default function ConfigPage() {
         {/* Night Mode Settings */}
         <Card>
           <CardHeader>
-            <CardTitle>Night Mode</CardTitle>
-            <CardDescription>Adjust settings for quiet hours</CardDescription>
+            <CardTitle>{t('config.nightMode')}</CardTitle>
+            <CardDescription>{t('config.nightModeDescription')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Start Time</Label>
+                <Label>{t('config.nightModeStartTime')}</Label>
                 <Input
                   type="time"
                   value={formData.night_mode_start}
@@ -163,7 +163,7 @@ export default function ConfigPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>End Time</Label>
+                <Label>{t('config.nightModeEndTime')}</Label>
                 <Input
                   type="time"
                   value={formData.night_mode_end}
@@ -176,9 +176,9 @@ export default function ConfigPage() {
 
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label>Disable Playback</Label>
+                <Label>{t('config.nightModeDisablePlayback')}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Completely disable video playback during night mode
+                  {t('config.nightModeDisablePlaybackDescription')}
                 </p>
               </div>
               <Switch
@@ -191,9 +191,9 @@ export default function ConfigPage() {
 
             {!formData.night_mode_disable_playback && (
               <div className="space-y-2">
-                <Label>Night Mode Volume</Label>
+                <Label>{t('config.nightModeVolume')}</Label>
                 <p className="text-sm text-muted-foreground mb-2">
-                  Lower volume during night hours
+                  {t('config.nightModeVolumeDescription')}
                 </p>
                 <div className="flex items-center gap-4">
                   <input
@@ -217,7 +217,7 @@ export default function ConfigPage() {
         <Card>
           <CardHeader>
             <CardTitle>{t('config.youtube')}</CardTitle>
-            <CardDescription>YouTube download preferences</CardDescription>
+            <CardDescription>{t('config.youtubeDescription')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -229,7 +229,7 @@ export default function ConfigPage() {
                 }
                 className="w-full h-10 rounded-md border border-input bg-background px-3 py-2"
               >
-                <option value="best">Best Quality</option>
+                <option value="best">{t('config.qualityBest')}</option>
                 <option value="1080p">1080p</option>
                 <option value="720p">720p</option>
                 <option value="480p">480p</option>
@@ -241,20 +241,20 @@ export default function ConfigPage() {
         {/* Schedule Settings */}
         <Card>
           <CardHeader>
-            <CardTitle>Scheduled Playback</CardTitle>
-            <CardDescription>Automatically play videos at specific times</CardDescription>
+            <CardTitle>{t('config.scheduledPlayback')}</CardTitle>
+            <CardDescription>{t('config.scheduledPlaybackDescription')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label>Scheduled Times</Label>
+              <Label>{t('config.scheduledTimes')}</Label>
               <p className="text-sm text-muted-foreground">
-                Videos will play for {formData.playback_duration_minutes} minutes at each scheduled time
+                {t('config.scheduledTimesDescription', { duration: formData.playback_duration_minutes })}
               </p>
               
               {/* List of scheduled times */}
               <div className="space-y-2">
                 {formData.play_schedule.length === 0 ? (
-                  <p className="text-sm text-muted-foreground italic">No scheduled times set</p>
+                  <p className="text-sm text-muted-foreground italic">{t('config.noScheduledTimes')}</p>
                 ) : (
                   formData.play_schedule.map((time, index) => (
                     <div key={index} className="flex items-center gap-2 p-2 border rounded-md">
@@ -297,7 +297,7 @@ export default function ConfigPage() {
                   }}
                 >
                   <Plus className="h-4 w-4 mr-1" />
-                  Add Time
+                  {t('config.addTime')}
                 </Button>
               </div>
             </div>
@@ -307,12 +307,12 @@ export default function ConfigPage() {
         {/* UI & Appearance Settings */}
         <Card>
           <CardHeader>
-            <CardTitle>UI & Appearance</CardTitle>
-            <CardDescription>Customize the look and feel of the application</CardDescription>
+            <CardTitle>{t('config.uiAppearance')}</CardTitle>
+            <CardDescription>{t('config.uiAppearanceDescription')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label>Language</Label>
+              <Label>{t('config.language')}</Label>
               <Select
                 value={i18n.language}
                 onValueChange={(value: string) => {
@@ -321,7 +321,7 @@ export default function ConfigPage() {
                 }}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select language" />
+                  <SelectValue placeholder={t('config.selectLanguage')} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="en">🇬🇧 English</SelectItem>
@@ -329,27 +329,27 @@ export default function ConfigPage() {
                 </SelectContent>
               </Select>
               <p className="text-sm text-muted-foreground">
-                Choose your preferred language
+                {t('config.languageDescription')}
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label>Theme</Label>
+              <Label>{t('config.theme')}</Label>
               <Select
                 value={theme}
                 onValueChange={(value: any) => setTheme(value)}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select theme" />
+                  <SelectValue placeholder={t('config.selectTheme')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="light">☀️ Light</SelectItem>
-                  <SelectItem value="dark">🌙 Dark</SelectItem>
-                  <SelectItem value="system">💻 System</SelectItem>
+                  <SelectItem value="light">☀️ {t('config.themeLight')}</SelectItem>
+                  <SelectItem value="dark">🌙 {t('config.themeDark')}</SelectItem>
+                  <SelectItem value="system">💻 {t('config.themeSystem')}</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-sm text-muted-foreground">
-                Choose your preferred color theme
+                {t('config.themeDescription')}
               </p>
             </div>
           </CardContent>
@@ -360,8 +360,8 @@ export default function ConfigPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Advanced Settings</CardTitle>
-                <CardDescription>GPIO and hardware configuration</CardDescription>
+                <CardTitle>{t('config.advanced')}</CardTitle>
+                <CardDescription>{t('config.advancedDescription')}</CardDescription>
               </div>
               <Button
                 variant="ghost"
@@ -371,12 +371,12 @@ export default function ConfigPage() {
                 {showAdvanced ? (
                   <>
                     <ChevronUp className="h-4 w-4 mr-2" />
-                    Hide
+                    {t('config.hide')}
                   </>
                 ) : (
                   <>
                     <ChevronDown className="h-4 w-4 mr-2" />
-                    Show
+                    {t('config.show')}
                   </>
                 )}
               </Button>
@@ -386,12 +386,12 @@ export default function ConfigPage() {
             <CardContent className="space-y-6">
               {/* GPIO Settings */}
               <div className="space-y-4">
-                <h4 className="font-medium text-sm">GPIO Button</h4>
+                <h4 className="font-medium text-sm">{t('config.gpioButton')}</h4>
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label>Enable GPIO</Label>
+                    <Label>{t('config.enableGpio')}</Label>
                     <p className="text-sm text-muted-foreground">
-                      Use physical button to control playback
+                      {t('config.enableGpioDescription')}
                     </p>
                   </div>
                   <Switch
@@ -409,13 +409,13 @@ export default function ConfigPage() {
 
               {/* Motion Sensor Settings */}
               <div className="space-y-4 pt-4 border-t">
-                <h4 className="font-medium text-sm">Motion Sensor</h4>
+                <h4 className="font-medium text-sm">{t('config.motionSensor')}</h4>
                 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label>Enable Motion Sensor</Label>
+                    <Label>{t('config.enableMotionSensor')}</Label>
                     <p className="text-sm text-muted-foreground">
-                      Detect when your pet is watching
+                      {t('config.enableMotionSensorDescription')}
                     </p>
                   </div>
                   <Switch
@@ -430,9 +430,9 @@ export default function ConfigPage() {
                   <>
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <Label>Auto-Stop on No Motion</Label>
+                        <Label>{t('config.autoStopOnNoMotion')}</Label>
                         <p className="text-sm text-muted-foreground">
-                          Stop playback when no motion detected
+                          {t('config.autoStopOnNoMotionDescription')}
                         </p>
                       </div>
                       <Switch
@@ -445,9 +445,9 @@ export default function ConfigPage() {
 
                     {formData.motion_stop_enabled && (
                       <div className="space-y-2">
-                        <Label>Motion Timeout (seconds)</Label>
+                        <Label>{t('config.motionTimeout')}</Label>
                         <p className="text-sm text-muted-foreground mb-2">
-                          Stop after this many seconds without motion
+                          {t('config.motionTimeoutDescription')}
                         </p>
                         <div className="flex items-center gap-4">
                           <Input
@@ -464,7 +464,7 @@ export default function ConfigPage() {
                             }
                           />
                           <span className="text-sm text-muted-foreground whitespace-nowrap">
-                            ({Math.floor(formData.motion_stop_timeout_seconds / 60)} min)
+                            ({Math.floor(formData.motion_stop_timeout_seconds / 60)} {t('common.min')})
                           </span>
                         </div>
                       </div>

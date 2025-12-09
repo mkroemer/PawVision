@@ -10,8 +10,9 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { Play, Trash2, Upload, Clock, Pencil } from 'lucide-react';
-import { formatDuration } from '@/lib/utils';
+import { Switch } from '@/components/ui/switch';
+import { Play, Trash2, Upload, Clock, Pencil, Download } from 'lucide-react';
+import { formatDuration, formatBytes } from '@/lib/utils';
 
 // Custom YouTube icon to replace deprecated lucide Youtube icon
 const YoutubeIcon = ({ className }: { className?: string }) => (
@@ -51,18 +52,22 @@ export default function LibraryPage() {
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [youtubeStartTime, setYoutubeStartTime] = useState('');
   const [youtubeEndTime, setYoutubeEndTime] = useState('');
+  const [youtubeOffline, setYoutubeOffline] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [youtubeDialogOpen, setYoutubeDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [videoToDelete, setVideoToDelete] = useState<number | null>(null);
+  const [videoToDelete, setVideoToDelete] = useState<string | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [videoToEdit, setVideoToEdit] = useState<any | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editStartTime, setEditStartTime] = useState('');
   const [editEndOffset, setEditEndOffset] = useState('');
+  const [editOffline, setEditOffline] = useState(false);
+  const [deleteOfflineDialogOpen, setDeleteOfflineDialogOpen] = useState(false);
+  const [pendingOfflineChanges, setPendingOfflineChanges] = useState<any>(null);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -112,6 +117,10 @@ export default function LibraryPage() {
     if (!youtubeUrl) return;
 
     setUploading(true);
+    
+    // Show initial downloading toast
+    showSuccess(t('library.downloadStarted'));
+    
     try {
       // Strip timestamp parameter from URL before sending to backend
       const cleanUrl = stripYouTubeTimestamp(youtubeUrl);
@@ -133,13 +142,17 @@ export default function LibraryPage() {
         return;
       }
 
-      const result = await youtubeService.download(cleanUrl, startTime, endOffset);
+      const result = youtubeOffline 
+        ? await youtubeService.download(cleanUrl, startTime, endOffset)
+        : await youtubeService.add(cleanUrl, startTime, endOffset);
+        
       if (result.success) {
-        showSuccess(result.message || t('messages.downloadSuccess'));
+        showSuccess(youtubeOffline ? t('library.downloadComplete') : t('messages.downloadSuccess'));
         setYoutubeDialogOpen(false);
         setYoutubeUrl('');
         setYoutubeStartTime('');
         setYoutubeEndTime('');
+        setYoutubeOffline(false);
         await refetch();
       } else {
         showError(result.message || t('messages.downloadError'));
@@ -153,8 +166,8 @@ export default function LibraryPage() {
     }
   };
 
-  const handleDelete = async (videoId: number) => {
-    setVideoToDelete(videoId);
+  const handleDelete = async (videoPath: string) => {
+    setVideoToDelete(videoPath);
     setDeleteDialogOpen(true);
   };
 
@@ -173,9 +186,9 @@ export default function LibraryPage() {
     }
   };
 
-  const handlePlay = async (videoId: number) => {
+  const handlePlay = async (videoPath: string) => {
     try {
-      await videoService.play(videoId);
+      await videoService.play(videoPath);
       showSuccess(t('control.playing'));
     } catch (error) {
       showError(t('messages.error'));
@@ -197,10 +210,39 @@ export default function LibraryPage() {
       setEditEndOffset('');
     }
     
+    // Set offline status for YouTube videos
+    setEditOffline(video.source === 'youtube' && !!video.download_path);
+    
     setEditDialogOpen(true);
   };
 
   const confirmEdit = async () => {
+    if (!videoToEdit) return;
+
+    // Check if we're disabling offline mode - need confirmation
+    if (videoToEdit.source === 'youtube') {
+      const wasOffline = !!videoToEdit.download_path;
+      const shouldBeOffline = editOffline;
+
+      if (wasOffline && !shouldBeOffline) {
+        // User is disabling offline - ask for confirmation
+        setPendingOfflineChanges({
+          videoToEdit,
+          editTitle,
+          editStartTime,
+          editEndOffset,
+          editOffline
+        });
+        setDeleteOfflineDialogOpen(true);
+        return; // Don't proceed yet, wait for confirmation
+      }
+    }
+
+    // Proceed with the update
+    await performEdit();
+  };
+
+  const performEdit = async () => {
     if (!videoToEdit) return;
 
     try {
@@ -226,16 +268,83 @@ export default function LibraryPage() {
         throw new Error(errorData.error || 'Failed to update video');
       }
 
-      showSuccess('Video updated successfully');
+      // Handle offline download toggle for YouTube videos
+      if (videoToEdit.source === 'youtube') {
+        const wasOffline = !!videoToEdit.download_path;
+        const shouldBeOffline = editOffline;
+
+        if (!wasOffline && shouldBeOffline) {
+          // Need to download - show toast
+          showSuccess(t('library.downloadingForOffline'));
+          
+          // Start download in background
+          youtubeService.add(videoToEdit.youtube_url || videoToEdit.path, 0, undefined, '720p', true)
+            .then((result) => {
+              if (result.success) {
+                showSuccess(t('library.downloadComplete'));
+                refetch();
+              } else {
+                showError(result.message || t('messages.downloadError'));
+              }
+            })
+            .catch((error) => {
+              showError(error.message || t('messages.downloadError'));
+            });
+        } else if (wasOffline && !shouldBeOffline) {
+          // Delete the downloaded file
+          if (videoToEdit.download_path) {
+            try {
+              await fetch('/api/video/delete-offline', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: videoToEdit.path })
+              });
+              showSuccess(t('library.offlineDeleted'));
+            } catch (error) {
+              showError('Failed to delete offline file');
+            }
+          }
+        } else {
+          showSuccess(t('messages.success'));
+        }
+      } else {
+        showSuccess(t('messages.success'));
+      }
+
       setEditDialogOpen(false);
       setVideoToEdit(null);
       setEditTitle('');
       setEditStartTime('');
       setEditEndOffset('');
+      setEditOffline(false);
       refetch();
     } catch (error: any) {
       showError(error.message || 'Failed to update video');
     }
+  };
+
+  const confirmDeleteOffline = async () => {
+    if (pendingOfflineChanges) {
+      // Restore the pending changes and proceed with the edit
+      setVideoToEdit(pendingOfflineChanges.videoToEdit);
+      setEditTitle(pendingOfflineChanges.editTitle);
+      setEditStartTime(pendingOfflineChanges.editStartTime);
+      setEditEndOffset(pendingOfflineChanges.editEndOffset);
+      setEditOffline(pendingOfflineChanges.editOffline);
+      
+      setDeleteOfflineDialogOpen(false);
+      setPendingOfflineChanges(null);
+      
+      // Proceed with the edit
+      await performEdit();
+    }
+  };
+
+  const cancelDeleteOffline = () => {
+    // User cancelled, restore the offline toggle
+    setEditOffline(true);
+    setDeleteOfflineDialogOpen(false);
+    setPendingOfflineChanges(null);
   };
 
   return (
@@ -243,7 +352,7 @@ export default function LibraryPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">{t('library.title')}</h2>
-          <p className="text-muted-foreground">Manage your video collection</p>
+          <p className="text-muted-foreground">{t('library.description')}</p>
         </div>
         <div className="flex gap-2">
           <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
@@ -255,14 +364,14 @@ export default function LibraryPage() {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>{t('library.upload')}</DialogTitle>
+                <DialogTitle>{t('library.uploadDialog')}</DialogTitle>
                 <DialogDescription>
-                  Upload a video file from your computer (max 5GB)
+                  {t('library.uploadDescription')}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <Label htmlFor="file-upload">Select Video File</Label>
+                  <Label htmlFor="file-upload">{t('library.selectFile')}</Label>
                   <Input
                     id="file-upload"
                     type="file"
@@ -272,14 +381,14 @@ export default function LibraryPage() {
                   />
                   {selectedFile && (
                     <p className="text-sm text-muted-foreground">
-                      Selected: {selectedFile.name} ({(selectedFile.size / (1024 * 1024)).toFixed(1)} MB)
+                      {t('library.currentTitle')}: {selectedFile.name} ({(selectedFile.size / (1024 * 1024)).toFixed(1)} MB)
                     </p>
                   )}
                 </div>
                 {uploading && (
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span>Uploading...</span>
+                      <span>{t('library.uploading')}</span>
                       <span>{uploadProgress}%</span>
                     </div>
                     <Progress value={uploadProgress} />
@@ -295,7 +404,7 @@ export default function LibraryPage() {
                   {t('common.cancel')}
                 </Button>
                 <Button onClick={handleFileUpload} disabled={!selectedFile || uploading}>
-                  {uploading ? 'Uploading...' : t('library.upload')}
+                  {uploading ? t('library.uploading') : t('library.upload')}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -312,7 +421,7 @@ export default function LibraryPage() {
               <DialogHeader>
                 <DialogTitle>{t('youtube.title')}</DialogTitle>
                 <DialogDescription>
-                  Download a video from YouTube
+                  {t('youtube.description')}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
@@ -335,13 +444,13 @@ export default function LibraryPage() {
                     disabled={uploading}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Enter a YouTube video URL (e.g., https://www.youtube.com/watch?v=...)
+                    {t('youtube.urlPlaceholder')}
                   </p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="youtube-start-time">Skip Start (seconds)</Label>
+                    <Label htmlFor="youtube-start-time">{t('youtube.startTime')}</Label>
                     <Input
                       id="youtube-start-time"
                       type="number"
@@ -353,12 +462,12 @@ export default function LibraryPage() {
                       disabled={uploading}
                     />
                     <p className="text-xs text-muted-foreground">
-                      Optional: Skip this many seconds from the start
+                      {t('youtube.startTimeDescription')}
                     </p>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="youtube-end-time">Trim End (seconds)</Label>
+                    <Label htmlFor="youtube-end-time">{t('youtube.endOffset')}</Label>
                     <Input
                       id="youtube-end-time"
                       type="number"
@@ -370,9 +479,25 @@ export default function LibraryPage() {
                       disabled={uploading}
                     />
                     <p className="text-xs text-muted-foreground">
-                      Optional: Remove this many seconds from the end
+                      {t('youtube.endOffsetDescription')}
                     </p>
                   </div>
+                </div>
+
+                {/* Offline availability toggle */}
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="youtube-offline">{t('youtube.makeAvailableOffline')}</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {t('youtube.makeAvailableOfflineDescription')}
+                    </p>
+                  </div>
+                  <Switch
+                    id="youtube-offline"
+                    checked={youtubeOffline}
+                    onCheckedChange={setYoutubeOffline}
+                    disabled={uploading}
+                  />
                 </div>
               </div>
               <DialogFooter>
@@ -389,9 +514,9 @@ export default function LibraryPage() {
           <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Delete Video</DialogTitle>
+                <DialogTitle>{t('library.delete')}</DialogTitle>
                 <DialogDescription>
-                  Are you sure you want to delete this video? This action cannot be undone.
+                  {t('library.deleteConfirmDescription')}
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter>
@@ -402,7 +527,26 @@ export default function LibraryPage() {
                   {t('common.cancel')}
                 </Button>
                 <Button variant="destructive" onClick={confirmDelete}>
-                  Delete
+                  {t('library.delete')}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={deleteOfflineDialogOpen} onOpenChange={setDeleteOfflineDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{t('library.deleteOfflineTitle')}</DialogTitle>
+                <DialogDescription>
+                  {t('library.deleteOfflineDescription')}
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button variant="outline" onClick={cancelDeleteOffline}>
+                  {t('common.cancel')}
+                </Button>
+                <Button variant="destructive" onClick={confirmDeleteOffline}>
+                  {t('library.deleteOfflineConfirm')}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -411,26 +555,26 @@ export default function LibraryPage() {
           <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
             <DialogContent className="sm:max-w-[500px]">
               <DialogHeader>
-                <DialogTitle>Edit Video</DialogTitle>
+                <DialogTitle>{t('library.editVideo')}</DialogTitle>
                 <DialogDescription>
-                  Update video metadata and trim settings
+                  {t('library.editDescription')}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
                   <label htmlFor="edit-title" className="text-sm font-medium">
-                    Title (optional)
+                    {t('library.videoTitle')}
                   </label>
                   <Input
                     id="edit-title"
-                    placeholder="Video title"
+                    placeholder={t('library.videoTitle')}
                     value={editTitle}
                     onChange={(e) => setEditTitle(e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
                   <label htmlFor="edit-start-time" className="text-sm font-medium">
-                    Skip Start (seconds)
+                    {t('library.startTime')}
                   </label>
                   <Input
                     id="edit-start-time"
@@ -442,12 +586,12 @@ export default function LibraryPage() {
                     onChange={(e) => setEditStartTime(e.target.value)}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Number of seconds to skip from the start of the video
+                    {t('library.startTimeDescription')}
                   </p>
                 </div>
                 <div className="space-y-2">
                   <label htmlFor="edit-end-offset" className="text-sm font-medium">
-                    Trim End (seconds)
+                    {t('library.endOffset')}
                   </label>
                   <Input
                     id="edit-end-offset"
@@ -459,13 +603,34 @@ export default function LibraryPage() {
                     onChange={(e) => setEditEndOffset(e.target.value)}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Number of seconds to trim from the end of the video
+                    {t('library.endOffsetDescription')}
                   </p>
                 </div>
                 {videoToEdit && videoToEdit.duration && (
                   <div className="text-sm text-muted-foreground">
                     <Clock className="inline h-4 w-4 mr-1" />
-                    Total duration: {Math.floor(videoToEdit.duration / 60)}:{(videoToEdit.duration % 60).toFixed(0).padStart(2, '0')}
+                    {t('library.duration')}: {Math.floor(videoToEdit.duration / 60)}:{(videoToEdit.duration % 60).toFixed(0).padStart(2, '0')}
+                  </div>
+                )}
+                {videoToEdit && videoToEdit.size > 0 && (
+                  <div className="text-sm text-muted-foreground">
+                    <Download className="inline h-4 w-4 mr-1" />
+                    {t('library.fileSize')}: {formatBytes(videoToEdit.size)}
+                  </div>
+                )}
+                {videoToEdit && videoToEdit.source === 'youtube' && (
+                  <div className="flex items-center space-x-2 pt-2 border-t">
+                    <Switch
+                      id="edit-offline"
+                      checked={editOffline}
+                      onCheckedChange={setEditOffline}
+                    />
+                    <Label htmlFor="edit-offline" className="flex-1 cursor-pointer">
+                      <div className="font-medium">{t('youtube.makeAvailableOffline')}</div>
+                      <p className="text-xs text-muted-foreground">
+                        {t('youtube.downloadDescription')}
+                      </p>
+                    </Label>
                   </div>
                 )}
               </div>
@@ -476,11 +641,12 @@ export default function LibraryPage() {
                   setEditTitle('');
                   setEditStartTime('');
                   setEditEndOffset('');
+                  setEditOffline(false);
                 }}>
                   {t('common.cancel')}
                 </Button>
                 <Button onClick={confirmEdit}>
-                  Save Changes
+                  {t('library.saveChanges')}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -534,9 +700,19 @@ export default function LibraryPage() {
                     <span className="font-medium">{video.source}</span>
                   </div>
                   {video.youtube_url && (
-                    <div className="text-xs text-muted-foreground truncate">
-                      {video.youtube_url}
-                    </div>
+                    <>
+                      <div className="text-xs text-muted-foreground truncate">
+                        {video.youtube_url}
+                      </div>
+                      <div className="h-5 flex items-center">
+                        {video.download_path && (
+                          <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                            <Download className="h-3 w-3" />
+                            <span>{t('library.availableOffline')}</span>
+                          </div>
+                        )}
+                      </div>
+                    </>
                   )}
                 </div>
               </CardContent>
@@ -544,7 +720,7 @@ export default function LibraryPage() {
                 <Button
                   size="sm"
                   className="flex-1"
-                  onClick={() => handlePlay(video.id)}
+                  onClick={() => handlePlay(video.path)}
                 >
                   <Play className="mr-2 h-4 w-4" />
                   {t('library.play')}
@@ -559,7 +735,7 @@ export default function LibraryPage() {
                 <Button
                   size="sm"
                   variant="destructive"
-                  onClick={() => handleDelete(video.id)}
+                  onClick={() => handleDelete(video.path)}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>

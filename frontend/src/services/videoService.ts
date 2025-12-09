@@ -17,33 +17,57 @@ export const videoService = {
 
   // Get playback status
   async getStatus(): Promise<PlaybackStatus> {
-    const response = await api.get<PlaybackStatus>('/video/status');
-    return response.data || { is_playing: false };
+    const response = await api.get<any>('/status');
+    // Backend returns 'playing', but frontend expects 'is_playing'
+    const data = response.data || response;
+    return {
+      is_playing: data.playing !== undefined ? data.playing : (data.is_playing || false),
+      paused: data.paused || false,
+      current_video: data.current_video
+    };
   },
 
-  // Play a video
-  async play(videoId: number): Promise<ApiResponse> {
-    return api.post('/video/play', { video_id: videoId });
+  // Play a video by path
+  async play(videoPath: string): Promise<ApiResponse> {
+    const formData = new FormData();
+    formData.append('path', videoPath);
+    
+    const response = await fetch('/api/play', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to play video');
+    }
+
+    return {
+      success: true,
+      message: 'Playing video',
+      data: data,
+    };
   },
 
   // Stop playback
   async stop(): Promise<ApiResponse> {
-    return api.post('/video/stop');
+    return api.post('/stop');
   },
 
-  // Pause playback
+  // Pause playback (not implemented in backend yet)
   async pause(): Promise<ApiResponse> {
-    return api.post('/video/pause');
+    return api.post('/pause');
   },
 
-  // Resume playback
+  // Resume playback (not implemented in backend yet)
   async resume(): Promise<ApiResponse> {
-    return api.post('/video/resume');
+    return api.post('/resume');
   },
 
-  // Set volume
+  // Set volume (not implemented in backend yet)
   async setVolume(volume: number): Promise<ApiResponse> {
-    return api.post('/video/volume', { volume });
+    return api.post('/volume', { volume });
   },
 
   // Upload video
@@ -52,8 +76,26 @@ export const videoService = {
   },
 
   // Delete video
-  async delete(videoId: number): Promise<ApiResponse> {
-    return api.delete(`/video/${videoId}`);
+  async delete(videoPath: string): Promise<ApiResponse> {
+    const formData = new FormData();
+    formData.append('path', videoPath);
+    
+    const response = await fetch('/api/video/delete', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to delete video');
+    }
+
+    return {
+      success: true,
+      message: data.success || 'Video deleted successfully',
+      data: data,
+    };
   },
 
   // Update video info

@@ -115,8 +115,10 @@ export default function Layout({ children }: LayoutProps) {
       {/* Footer */}
       <footer className="border-t py-6">
         <div className="container max-w-7xl mx-auto flex flex-col items-center justify-center gap-1 px-4 text-center text-sm text-muted-foreground">
-          <div>
-            © {new Date().getFullYear()} 🐾 PawVision - Made with ❤️ for pets and their humans
+          <div className="flex flex-wrap items-center justify-center gap-x-2">
+            <span>© {new Date().getFullYear()} 🐾 PawVision</span>
+            <span className="hidden sm:inline">-</span>
+            <span>Made with ❤️ for pets and their humans</span>
           </div>
           <div className="text-xs">
             <a href="https://www.gnu.org/licenses/agpl-3.0" target="_blank" rel="noopener noreferrer"> AGPL v3 License</a>

@@ -11,6 +11,7 @@ from typing import Dict, List, Optional
 
 from .database import VideoEntry
 from .playback import PlaybackEngine, format_duration, get_video_duration
+from .playback.vlc_engine import VLCPlaybackEngine
 from .time_utils import time_parser
 from .video_library import VideoLibraryManager
 
@@ -24,13 +25,22 @@ class VideoPlayer:
         self.video_dirs = video_dirs
         self.statistics_manager = statistics_manager
         self.monitor_manager = monitor_manager
-        self.process_lock = threading.Lock()
+        self.process_lock = threading.RLock()  # Use RLock for reentrant locking
         self.last_playback_end = None  # Track when last video ended
         self.motion_detected = False  # Track motion sensor state
         self.current_video = None  # Current video path for statistics
 
-        # Initialize playback engine
-        self.playback_engine = PlaybackEngine()
+        # Initialize VLC playback engine (with fallback to old engine)
+        try:
+            self.playback_engine = VLCPlaybackEngine()
+            self.vlc_enabled = True
+            self.logger = logging.getLogger(__name__)
+            self.logger.info("Using VLC playback engine with pause/resume support")
+        except Exception as e:
+            self.logger = logging.getLogger(__name__)
+            self.logger.warning("VLC engine not available, falling back to basic playback: %s", e)
+            self.playback_engine = PlaybackEngine()
+            self.vlc_enabled = False
 
         # Initialize video library manager
         db_path = getattr(config, "database_path", "pawvision.db")
@@ -112,33 +122,45 @@ class VideoPlayer:
                 self.logger.error("Local video file not found: %s", video_entry.path)
                 return None
 
-        # Handle YouTube videos
-        playback_path = video_entry.get_playback_path()
+        # Handle YouTube videos - prefer downloaded file, then stream URL, then YouTube URL
+        # 1. Check if we have a downloaded file
+        if video_entry.download_path and os.path.exists(video_entry.download_path):
+            self.logger.debug("Using downloaded file for YouTube video: %s", video_entry.download_path)
+            return video_entry.download_path
 
-        # If we got a YouTube URL back, we need to refresh the stream URL
-        if playback_path and playback_path.startswith(("https://www.youtube.com", "https://youtu.be")):
-            self.logger.info(
-                "Refreshing stream URL for YouTube video: %s",
+        # 2. Check if we have a valid stream URL
+        if video_entry.stream_url and not video_entry.is_stream_expired():
+            self.logger.debug("Using cached stream URL for YouTube video")
+            return video_entry.stream_url
+
+        # 3. Stream URL is expired or doesn't exist - refresh it
+        self.logger.info(
+            "Refreshing stream URL for YouTube video: %s",
+            video_entry.get_display_title(),
+        )
+
+        if self.library_manager.youtube_manager.refresh_stream_url(video_entry):
+            # Update the database with new stream URL
+            self.library_manager.add_or_update_video(video_entry)
+            return video_entry.stream_url
+        else:
+            self.logger.error(
+                "Failed to refresh stream URL for: %s",
                 video_entry.get_display_title(),
             )
-
-            if self.library_manager.youtube_manager.refresh_stream_url(video_entry):
-                # Update the database with new stream URL
-                self.library_manager.add_or_update_video(video_entry)
-                playback_path = video_entry.stream_url
-            else:
-                self.logger.error(
-                    "Failed to refresh stream URL for: %s",
-                    video_entry.get_display_title(),
-                )
-                return None
-
-        return playback_path
+            # Fall back to original YouTube URL as last resort
+            return video_entry.youtube_url
 
     def get_all_video_files(self) -> List[str]:
         """Get list of all video files in configured directories (filesystem scan)."""
         videos = []
         supported_extensions = (".mp4", ".mkv", ".avi", ".mov", ".m4v", ".webm")
+
+        # Get all YouTube download paths to exclude from local scan
+        youtube_download_paths = set()
+        for entry in self.library_manager.get_all_videos():
+            if entry.is_youtube and entry.download_path:
+                youtube_download_paths.add(os.path.abspath(entry.download_path))
 
         for vdir in self.video_dirs:
             if not os.path.exists(vdir):
@@ -150,11 +172,13 @@ class VideoPlayer:
                     if filename.lower().endswith(supported_extensions):
                         full_path = os.path.join(vdir, filename)
                         if os.path.isfile(full_path):
-                            videos.append(full_path)
+                            # Skip files that are YouTube downloads
+                            if os.path.abspath(full_path) not in youtube_download_paths:
+                                videos.append(full_path)
             except OSError as e:
                 self.logger.error("Error reading video directory %s: %s", vdir, e)
 
-        self.logger.debug("Found %d videos", len(videos))
+        self.logger.debug("Found %d videos (excluding YouTube downloads)", len(videos))
         return videos
 
     def get_video_library_entries(self) -> List[VideoEntry]:
@@ -216,6 +240,27 @@ class VideoPlayer:
         except (AttributeError, OSError) as e:
             self.logger.error("Error turning monitor off: %s", e)
 
+    def _handle_playback_finished(self, video_path: Optional[str], viewing_duration: Optional[float], reason: str):
+        """Handle common cleanup after the playback engine stops on its own."""
+        if viewing_duration is None:
+            return
+
+        turn_off_monitor = reason in ("timeout", "completed")
+
+        with self.process_lock:
+            if reason in ("manual", "switch", "web"):
+                self.last_playback_end = None
+            else:
+                self.last_playback_end = datetime.now()
+
+            if self.statistics_manager and video_path:
+                self.statistics_manager.record_video_viewing(video_path, viewing_duration, reason)
+
+            self.current_video = None
+
+        if turn_off_monitor:
+            self.turn_monitor_off()
+
     def get_current_video_info(self) -> Optional[dict]:
         """Get information about the currently playing video."""
         with self.process_lock:
@@ -266,26 +311,233 @@ class VideoPlayer:
         return not self.is_playing() and not self.is_in_cooldown()
 
     def stop_video(self, reason="manual"):
-        """Stop currently playing video."""
-        viewing_duration = self.playback_engine.stop_playback(reason)
+        """Stop currently playing video.
         
-        if viewing_duration is not None:
+        Returns:
+            True if a video was stopped, False if nothing was playing
+        """
+        turn_off_monitor = reason not in ("switch",)
+
+        with self.process_lock:
+            viewing_duration = self.playback_engine.stop_playback(reason)
+
+            if viewing_duration is None:
+                return False
+
             self.logger.info("Stopped video playback (reason: %s)", reason)
 
-            # Record the end time
-            self.last_playback_end = datetime.now()
+            if reason not in ("manual", "switch", "web"):
+                self.last_playback_end = datetime.now()
+            else:
+                self.last_playback_end = None
+                self.logger.debug("Clearing cooldown for manual/switch stop")
 
-            # Record viewing statistics
             if self.statistics_manager and self.current_video:
                 self.statistics_manager.record_video_viewing(
                     self.current_video, viewing_duration, reason
                 )
 
             self.current_video = None
-            self.turn_monitor_off()
-            return True
 
-        return False
+        if turn_off_monitor:
+            self.turn_monitor_off()
+
+        return True
+
+    def pause_video(self) -> bool:
+        """Pause currently playing video.
+        
+        Returns:
+            True if video was paused successfully, False otherwise
+        """
+        if not self.vlc_enabled:
+            self.logger.warning("Pause not supported: VLC engine not available")
+            return False
+        
+        if not self.is_playing():
+            self.logger.warning("Cannot pause: no video is playing")
+            return False
+        
+        return self.playback_engine.pause_playback()
+
+    def resume_video(self) -> bool:
+        """Resume paused video.
+        
+        Returns:
+            True if video was resumed successfully, False otherwise
+        """
+        if not self.vlc_enabled:
+            self.logger.warning("Resume not supported: VLC engine not available")
+            return False
+        
+        # Check if there's a player (even if paused)
+        if not hasattr(self.playback_engine, 'player') or self.playback_engine.player is None:
+            self.logger.warning("Cannot resume: no video loaded")
+            return False
+        
+        return self.playback_engine.resume_playback()
+
+    def set_volume(self, volume: int) -> bool:
+        """Set playback volume (0-100).
+        
+        Args:
+            volume: Volume level from 0 (mute) to 100 (max)
+            
+        Returns:
+            True if volume was set successfully, False otherwise
+        """
+        if not self.vlc_enabled:
+            self.logger.warning("Volume control not supported: VLC engine not available")
+            return False
+        
+        if not self.is_playing():
+            self.logger.warning("Cannot set volume: no video is playing")
+            return False
+        
+        # Clamp volume to 0-100
+        volume = max(0, min(100, volume))
+        return self.playback_engine.set_volume(volume)
+
+    def is_paused(self) -> bool:
+        """Check if video is currently paused.
+        
+        Returns:
+            True if video is paused, False otherwise
+        """
+        if not self.vlc_enabled:
+            return False
+        
+        return self.playback_engine.is_paused_state()
+
+    def play_video(self, video_path: str, triggered_by: str = "api") -> bool:
+        """Play a specific video by path.
+
+        Args:
+            video_path: Path to the video file or youtube:// URL
+            triggered_by: How the video was triggered ('button', 'scheduled', 'api', 'web')
+
+        Returns:
+            True if playback started successfully, False otherwise
+        """
+        with self.process_lock:
+            # Check if night mode playback is disabled
+            if self.is_night_mode() and self.config.night_mode_disable_playback:
+                self.logger.info("Cannot start video - playback disabled during night mode")
+                return False
+
+            # If a video is already playing, stop it first to allow switching videos
+            if self.is_playing():
+                self.logger.info("Stopping current video to switch to new one")
+                self.stop_video(reason="switch")
+            
+            # Check if we're in cooldown (but not from the video we just stopped)
+            if self.is_in_cooldown():
+                remaining = (
+                    self.config.post_playback_cooldown_minutes * 60
+                    - (datetime.now() - self.last_playback_end).total_seconds()
+                )
+                self.logger.info("Cannot start video - in cooldown for %.0f more seconds", remaining)
+                return False
+
+            # Get video entry from library
+            video_entry = self.get_video_entry(video_path)
+            if not video_entry:
+                self.logger.error("Video not found in library: %s", video_path)
+                return False
+
+            # Get the actual playback path (handles YouTube URLs, local files, etc.)
+            playback_path = self._get_playback_path(video_entry)
+            if not playback_path:
+                self.logger.error("Could not get playback path for: %s", video_entry.get_display_title())
+                return False
+
+            self.logger.info(
+                "Playing video: %s (triggered by: %s)",
+                video_entry.get_display_title(),
+                triggered_by,
+            )
+
+            # Get effective duration considering custom start/end times
+            effective_duration = video_entry.get_playback_duration()
+            if effective_duration is None or effective_duration <= 0:
+                self.logger.error("Invalid effective duration for %s", video_entry.get_display_title())
+                return False
+
+            # Calculate playback parameters using custom start/end times
+            custom_start = video_entry.custom_start_time
+            custom_end = video_entry.custom_end_time or video_entry.duration
+
+            # Determine how much of the video we'll actually play
+            timeout_sec = self.config.playback_duration_minutes * 60
+            available_duration = custom_end - custom_start
+
+            if available_duration <= timeout_sec:
+                # Play from custom start time for the available duration
+                start_sec = custom_start
+                actual_play_duration = available_duration
+            else:
+                # Pick a random start point within the custom range
+                max_additional_start = available_duration - timeout_sec
+                random_offset = random.uniform(0, max_additional_start)
+                start_sec = custom_start + random_offset
+                actual_play_duration = timeout_sec
+
+            self.logger.info(
+                "Playing %s from %.1fs for %.1fs (custom range: %.1f-%.1f)",
+                video_entry.get_display_title(),
+                start_sec,
+                actual_play_duration,
+                custom_start,
+                custom_end,
+            )
+
+            # Prepare volume setting
+            if self.is_night_mode():
+                # Use night mode volume instead of muting
+                night_volume = getattr(self.config, "night_mode_volume", 30)
+                volume = night_volume
+                self.logger.info("Night mode: using volume %d", night_volume)
+            else:
+                volume = self.config.volume
+
+            # Turn on monitor
+            self.turn_monitor_on()
+
+            # Define callback for when video times out
+            library_path = video_entry.path
+
+            def on_timeout_callback(_engine_path, viewing_duration):
+                """Handle video timeout."""
+                self._handle_playback_finished(library_path, viewing_duration, "timeout")
+
+            def on_complete_callback(_engine_path, viewing_duration):
+                """Handle natural end of playback."""
+                self._handle_playback_finished(library_path, viewing_duration, "completed")
+
+            # Start video playback using the engine
+            self.current_video = video_entry.path  # Track current video (for statistics)
+            
+            success = self.playback_engine.start_playback(
+                video_path=playback_path,
+                start_time=start_sec,
+                volume=volume,
+                duration=actual_play_duration,
+                on_complete=on_complete_callback,
+                on_timeout=on_timeout_callback,
+            )
+
+            if not success:
+                self.logger.error("Failed to start video playback")
+                self.current_video = None
+                self.turn_monitor_off()
+                return False
+
+            # Record statistics
+            if self.statistics_manager:
+                self.statistics_manager.record_video_play(video_entry.path, triggered_by)
+
+            self.logger.info("Video playback started successfully")
+            return True
 
     def play_random_video(self, trigger: str = "button") -> bool:
         """Play a random video with timeout.
@@ -335,7 +587,7 @@ class VideoPlayer:
         )
 
         # Get effective duration considering custom start/end times
-        effective_duration = video_entry.get_effective_duration()
+        effective_duration = video_entry.get_playback_duration()
         if effective_duration is None or effective_duration <= 0:
             self.logger.error("Invalid effective duration for %s", video_entry.get_display_title())
             return False
@@ -377,38 +629,58 @@ class VideoPlayer:
         else:
             volume = self.config.volume
 
-        # Turn on monitor
-        self.turn_monitor_on()
+        library_path = video_entry.path
+        started = False
 
-        # Define callback for when video times out
-        def on_timeout_callback(video_path, viewing_duration):
+        def on_timeout_callback(_engine_path, viewing_duration):
             """Handle video timeout."""
-            self.last_playback_end = datetime.now()
-            if self.statistics_manager and video_path:
-                self.statistics_manager.record_video_viewing(video_path, viewing_duration, "timeout")
-            self.current_video = None
-            self.turn_monitor_off()
+            self._handle_playback_finished(library_path, viewing_duration, "timeout")
 
-        # Start video playback using the engine
-        self.current_video = video_entry.path  # Track current video (for statistics)
-        
-        success = self.playback_engine.start_playback(
-            video_path=playback_path,
-            start_time=start_sec,
-            volume=volume,
-            duration=actual_play_duration,
-            on_timeout=on_timeout_callback,
-        )
+        def on_complete_callback(_engine_path, viewing_duration):
+            """Handle natural end of playback."""
+            self._handle_playback_finished(library_path, viewing_duration, "completed")
 
-        if not success:
-            self.logger.error("Failed to start video playback")
-            self.current_video = None
+        with self.process_lock:
+            if self.is_playing():
+                self.logger.info("Cannot start random video - already playing")
+                return False
+
+            if self.is_in_cooldown():
+                remaining = (
+                    self.config.post_playback_cooldown_minutes * 60
+                    - (datetime.now() - self.last_playback_end).total_seconds()
+                ) if self.last_playback_end else 0
+                self.logger.info("Cannot start video - in cooldown for %.0f more seconds", remaining)
+                return False
+
+            # Turn on monitor now that we're ready to start playback
+            self.turn_monitor_on()
+
+            # Start video playback using the engine
+            self.current_video = library_path  # Track current video (for statistics)
+
+            success = self.playback_engine.start_playback(
+                video_path=playback_path,
+                start_time=start_sec,
+                volume=volume,
+                duration=actual_play_duration,
+                on_complete=on_complete_callback,
+                on_timeout=on_timeout_callback,
+            )
+
+            if not success:
+                self.logger.error("Failed to start video playback")
+                self.current_video = None
+
+            started = success
+
+        if not started:
             self.turn_monitor_off()
             return False
 
         # Record statistics
         if self.statistics_manager:
-            self.statistics_manager.record_video_play(video_entry.path, trigger)
+            self.statistics_manager.record_video_play(library_path, trigger)
 
         self.logger.info("Video playback started successfully")
         return True
@@ -435,10 +707,10 @@ class VideoPlayer:
                         "duration_str": (format_duration(entry.duration) if entry.duration else "Unknown"),
                         "custom_start_time": entry.custom_start_time,
                         "custom_end_time": entry.custom_end_time,
-                        "effective_duration": entry.get_effective_duration(),
+                        "effective_duration": entry.get_playback_duration(),
                         "effective_duration_str": (
-                            format_duration(entry.get_effective_duration())
-                            if entry.get_effective_duration()
+                            format_duration(entry.get_playback_duration())
+                            if entry.get_playback_duration()
                             else "Unknown"
                         ),
                         # YouTube-specific fields
@@ -467,10 +739,10 @@ class VideoPlayer:
                         "duration_str": (format_duration(entry.duration) if entry.duration else "Unknown"),
                         "custom_start_time": entry.custom_start_time,
                         "custom_end_time": entry.custom_end_time,
-                        "effective_duration": entry.get_effective_duration(),
+                        "effective_duration": entry.get_playback_duration(),
                         "effective_duration_str": (
-                            format_duration(entry.get_effective_duration())
-                            if entry.get_effective_duration()
+                            format_duration(entry.get_playback_duration())
+                            if entry.get_playback_duration()
                             else "Unknown"
                         ),
                         # YouTube-specific fields (False for local files)
@@ -505,4 +777,3 @@ class VideoPlayer:
     def cleanup_cache(self):
         """Clean up old cache entries (now handled by database)."""
         # Cache cleanup is no longer needed - handled by database
-        pass

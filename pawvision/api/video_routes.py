@@ -107,8 +107,11 @@ def init_video_routes(app_context):
                     'filename': filename,
                     'path': entry.path,  # Include path for edit operations
                     'duration': entry.duration or 0,
+                    'size': entry.size or 0,
                     'source': 'youtube' if entry.is_youtube else 'local',
                     'youtube_url': entry.youtube_url,
+                    'youtube_id': entry.youtube_id,
+                    'download_path': entry.download_path,
                     'thumbnail': thumbnail_url,
                     'added_date': entry.added_time.isoformat() if entry.added_time else '',
                     'custom_start_time': entry.custom_start_time,
@@ -129,17 +132,29 @@ def init_video_routes(app_context):
 
             # Handle YouTube videos - remove from library and delete downloaded files
             if video_path.startswith('youtube://'):
-                # Get video entry first to check for downloaded file
+                # Get video entry first to check for downloaded file and thumbnail
                 video_entry = video_player.library_manager.get_video(video_path)
                 downloaded_file_deleted = False
+                thumbnail_deleted = False
 
-                if video_entry and video_entry.download_path and os.path.exists(video_entry.download_path):
-                    try:
-                        os.remove(video_entry.download_path)
-                        downloaded_file_deleted = True
-                        logger.info('Deleted downloaded file: %s', video_entry.download_path)
-                    except OSError as e:
-                        logger.error('Failed to delete downloaded file %s: %s', video_entry.download_path, e)
+                if video_entry:
+                    # Delete downloaded file if it exists
+                    if video_entry.download_path and os.path.exists(video_entry.download_path):
+                        try:
+                            os.remove(video_entry.download_path)
+                            downloaded_file_deleted = True
+                            logger.info('Deleted downloaded file: %s', video_entry.download_path)
+                        except OSError as e:
+                            logger.error('Failed to delete downloaded file %s: %s', video_entry.download_path, e)
+                    
+                    # Delete thumbnail if it exists
+                    if video_entry.thumbnail_path and os.path.exists(video_entry.thumbnail_path):
+                        try:
+                            os.remove(video_entry.thumbnail_path)
+                            thumbnail_deleted = True
+                            logger.info('Deleted thumbnail: %s', video_entry.thumbnail_path)
+                        except OSError as e:
+                            logger.error('Failed to delete thumbnail %s: %s', video_entry.thumbnail_path, e)
 
                 # Remove from library database
                 success = video_player.library_manager.remove_video(video_path)
@@ -147,6 +162,8 @@ def init_video_routes(app_context):
                     message = 'YouTube video removed from library'
                     if downloaded_file_deleted:
                         message += ' and downloaded file deleted'
+                    if thumbnail_deleted:
+                        message += ' and thumbnail deleted'
                     return jsonify({'success': message}), 200
                 else:
                     return jsonify({'error': 'Failed to remove YouTube video'}), 500
@@ -158,17 +175,76 @@ def init_video_routes(app_context):
             if not os.path.exists(video_path):
                 return jsonify({'error': 'File not found'}), 404
 
+            # Get video entry to check for thumbnail before deleting
+            video_entry = video_player.library_manager.get_video(video_path)
+            thumbnail_deleted = False
+            
+            if video_entry and video_entry.thumbnail_path and os.path.exists(video_entry.thumbnail_path):
+                try:
+                    os.remove(video_entry.thumbnail_path)
+                    thumbnail_deleted = True
+                    logger.info('Deleted thumbnail: %s', video_entry.thumbnail_path)
+                except OSError as e:
+                    logger.error('Failed to delete thumbnail %s: %s', video_entry.thumbnail_path, e)
+
             # Delete file
             os.remove(video_path)
 
             filename = os.path.basename(video_path)
             logger.info('Video deleted: %s', filename)
+            
+            message = f'Deleted {filename}'
+            if thumbnail_deleted:
+                message += ' and thumbnail'
 
-            return jsonify({'success': f'Deleted {filename}'}), 200
+            return jsonify({'success': message}), 200
 
         except OSError as e:
             logger.error('Delete error: %s', e)
             return jsonify({'error': 'Delete failed'}), 500
+
+    @video_bp.route('/delete-offline', methods=['POST'])
+    def delete_offline():
+        """Delete the downloaded file for a YouTube video (keep the library entry)."""
+        try:
+            data = request.get_json()
+            video_path = data.get('path')
+            
+            if not video_path:
+                return jsonify({'error': 'No path provided'}), 400
+
+            # Only works for YouTube videos
+            if not video_path.startswith('youtube://'):
+                return jsonify({'error': 'This endpoint only works for YouTube videos'}), 400
+
+            # Get video entry to find download path
+            video_entry = video_player.library_manager.get_video(video_path)
+            
+            if not video_entry:
+                return jsonify({'error': 'Video not found'}), 404
+
+            if not video_entry.download_path:
+                return jsonify({'error': 'No downloaded file found'}), 404
+
+            # Delete the downloaded file
+            if os.path.exists(video_entry.download_path):
+                try:
+                    os.remove(video_entry.download_path)
+                    logger.info('Deleted offline file: %s', video_entry.download_path)
+                except OSError as e:
+                    logger.error('Failed to delete offline file %s: %s', video_entry.download_path, e)
+                    return jsonify({'error': 'Failed to delete file'}), 500
+
+            # Update the database to remove download_path
+            video_entry.download_path = None
+            if video_player.library_manager.add_or_update_video(video_entry):
+                return jsonify({'success': 'Offline file deleted'}), 200
+            else:
+                return jsonify({'error': 'Failed to update database'}), 500
+
+        except (ValueError, KeyError) as e:
+            logger.error('Delete offline error: %s', e)
+            return jsonify({'error': 'Invalid request'}), 400
 
     @video_bp.route('/update', methods=['POST'])
     def update_video():

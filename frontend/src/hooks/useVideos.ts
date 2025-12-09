@@ -26,5 +26,19 @@ export const useVideos = () => {
     fetchVideos();
   }, [fetchVideos]);
 
+  // Refetch when page becomes visible again (tab switching)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchVideos();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [fetchVideos]);
+
   return { videos, loading, error, refetch: fetchVideos };
 };
