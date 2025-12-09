@@ -209,22 +209,53 @@ else
     echo "📝 No pre-built static files found"
 fi
 
-# Try to build frontend if Node.js is available and frontend directory exists
-if [ -d "frontend" ] && command -v npm >/dev/null 2>&1; then
-    echo "🔨 Node.js detected - attempting to build frontend..."
-    cd frontend
-    if npm install --production 2>/dev/null && npm run build 2>/dev/null; then
-        echo "✅ Frontend built successfully"
-        if [ -d "dist" ]; then
-            cp -r dist/* "$INSTALL_DIR/static/" 2>/dev/null
-            echo "✅ Frontend deployed to static directory"
+# Install Node.js if not available and frontend directory exists
+if [ -d "frontend" ]; then
+    if ! command -v npm >/dev/null 2>&1; then
+        echo "📦 Installing Node.js for frontend build..."
+        curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash - 2>/dev/null
+        sudo apt-get install -y nodejs 2>/dev/null
+        
+        if ! command -v npm >/dev/null 2>&1; then
+            echo "⚠️  Node.js installation failed - using fallback interface"
+        else
+            echo "✅ Node.js installed successfully"
         fi
-    else
-        echo "⚠️  Frontend build failed - using fallback interface"
     fi
-    cd ..
+    
+    # Build frontend if Node.js is available
+    if command -v npm >/dev/null 2>&1; then
+        echo "🔨 Building React frontend..."
+        cd frontend
+        
+        # Install dependencies
+        if npm install 2>/dev/null; then
+            echo "✅ Frontend dependencies installed"
+            
+            # Build the frontend
+            if npm run build 2>/dev/null; then
+                echo "✅ Frontend built successfully"
+                
+                # Deploy built files
+                if [ -d "dist" ]; then
+                    cp -r dist/* "$INSTALL_DIR/static/" 2>/dev/null && echo "✅ Frontend deployed to static directory"
+                elif [ -d "build" ]; then
+                    cp -r build/* "$INSTALL_DIR/static/" 2>/dev/null && echo "✅ Frontend deployed to static directory"
+                else
+                    echo "⚠️  Build directory not found - using fallback interface"
+                fi
+            else
+                echo "⚠️  Frontend build failed - using fallback interface"
+            fi
+        else
+            echo "⚠️  Frontend dependency installation failed - using fallback interface"
+        fi
+        cd ..
+    else
+        echo "📝 Node.js not available - using fallback interface"
+    fi
 else
-    echo "📝 Node.js not available or no frontend directory - using fallback interface"
+    echo "📝 No frontend directory found - using fallback interface"
 fi
 
 # Copy any other important files
