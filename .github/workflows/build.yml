@@ -35,7 +35,8 @@ jobs:
     - name: Create static directory structure
       run: |
         mkdir -p build/static
-        cp -r frontend/dist/* build/static/
+        # Frontend builds to static/dist/ directory
+        cp -r static/dist/* build/static/
         # Create templates directory with fallback
         mkdir -p build/templates
         cp templates/index.html build/templates/ 2>/dev/null || echo "Using built frontend"
