@@ -332,14 +332,24 @@ fi
 # Restart or start service with timeout protection
 if systemctl is-active --quiet pawvision 2>/dev/null; then
     echo "🔄 Restarting PawVision service..."
-    # Force kill any existing process first
-    sudo systemctl kill pawvision 2>/dev/null || true
+    # Stop service first
+    sudo systemctl stop pawvision &
+    sleep 5
+    sudo pkill -f "systemctl stop pawvision" 2>/dev/null || true
+    
+    # Force kill the python process if still running
+    sudo pkill -f "python /home/pi/main.py" 2>/dev/null || true
     sleep 2
+    
+    # Clean up and start fresh
     sudo systemctl reset-failed pawvision 2>/dev/null || true
-    sudo systemctl start pawvision
+    sudo systemctl start pawvision &
+    sleep 3
+    
 elif $FRESH_INSTALL; then
     echo "🚀 Starting PawVision service for the first time..."
-    sudo systemctl start pawvision
+    sudo systemctl start pawvision &
+    sleep 3
 fi
 
 # Wait a moment for service to start, then check status
