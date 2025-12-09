@@ -1,0 +1,135 @@
+name: Build and Release PawVision
+
+on:
+  push:
+    branches: [ main, dev ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-frontend:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'pnpm'
+        cache-dependency-path: 'frontend/pnpm-lock.yaml'
+    
+    - name: Install pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+    
+    - name: Install frontend dependencies
+      run: |
+        cd frontend
+        pnpm install
+    
+    - name: Build frontend
+      run: |
+        cd frontend
+        pnpm run build
+    
+    - name: Create static directory structure
+      run: |
+        mkdir -p build/static
+        cp -r frontend/dist/* build/static/
+        # Create templates directory with fallback
+        mkdir -p build/templates
+        cp templates/index.html build/templates/ 2>/dev/null || echo "Using built frontend"
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: pawvision-frontend-build
+        path: build/
+        retention-days: 30
+
+  build-package:
+    needs: build-frontend
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Download frontend build
+      uses: actions/download-artifact@v4
+      with:
+        name: pawvision-frontend-build
+        path: build/
+    
+    - name: Create deployment package
+      run: |
+        # Create package directory
+        mkdir -p package/pawvision
+        
+        # Copy Python files
+        cp -r pawvision/ package/pawvision/
+        cp main.py package/pawvision/
+        cp requirements.txt package/pawvision/
+        
+        # Copy built frontend and templates
+        cp -r build/static package/pawvision/
+        cp -r build/templates package/pawvision/
+        
+        # Copy deployment scripts
+        cp install.sh package/pawvision/
+        
+        # Create deployment info
+        echo "PawVision $(date '+%Y-%m-%d %H:%M:%S')" > package/pawvision/BUILD_INFO
+        echo "Git commit: ${{ github.sha }}" >> package/pawvision/BUILD_INFO
+        echo "Branch: ${{ github.ref_name }}" >> package/pawvision/BUILD_INFO
+        
+        # Create archive
+        cd package
+        tar -czf ../pawvision-package.tar.gz pawvision/
+    
+    - name: Create Release (on tag)
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          pawvision-package.tar.gz
+        body: |
+          ## PawVision Release ${{ github.ref_name }}
+          
+          ### Installation Instructions
+          ```bash
+          # Download and extract
+          wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/pawvision-package.tar.gz
+          tar -xzf pawvision-package.tar.gz
+          cd pawvision
+          
+          # Install
+          chmod +x install.sh
+          ./install.sh
+          ```
+          
+          ### What's Included
+          - ✅ Pre-built React frontend
+          - ✅ Complete Python backend
+          - ✅ Installation script
+          - ✅ Templates and static assets
+          - ✅ Service configuration
+          
+          ### Changes in this Release
+          - Built from commit ${{ github.sha }}
+          - Frontend build date: $(date)
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Upload package artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: pawvision-complete-package
+        path: pawvision-package.tar.gz
+        retention-days: 90
