@@ -203,15 +203,19 @@ EOF
 echo "🎨 Setting up frontend and static assets..."
 mkdir -p "$INSTALL_DIR/static"
 
-# Copy existing static files if available
-if [ -d "static" ]; then
-    cp -r static/* "$INSTALL_DIR/static/" 2>/dev/null && echo "✅ Static files copied"
+# Check if we have pre-built static files (from GitHub releases)
+if [ -d "static" ] && [ "$(ls -A static 2>/dev/null)" ]; then
+    cp -r static/* "$INSTALL_DIR/static/" 2>/dev/null && echo "✅ Pre-built static files deployed"
+    echo "🎉 Using pre-built React frontend - no build needed!"
+    FRONTEND_DEPLOYED=true
 else
     echo "📝 No pre-built static files found"
+    FRONTEND_DEPLOYED=false
 fi
 
-# Install Node.js if not available and frontend directory exists
-if [ -d "$REPO_DIR/frontend" ]; then
+# Only build frontend if we don't have pre-built files
+if [ "$FRONTEND_DEPLOYED" = false ] && [ -d "$REPO_DIR/frontend" ]; then
+    echo "🔨 Pre-built frontend not available - building from source..."
     if ! command -v npm >/dev/null 2>&1; then
         echo "📦 Installing Node.js for frontend build..."
         curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash - 2>/dev/null
@@ -257,7 +261,7 @@ if [ -d "$REPO_DIR/frontend" ]; then
     else
         echo "📝 Node.js not available - using fallback interface"
     fi
-else
+elif [ "$FRONTEND_DEPLOYED" = false ]; then
     echo "📝 No frontend directory found - using fallback interface"
 fi
 
