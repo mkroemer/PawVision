@@ -79,6 +79,7 @@ echo "📥 Downloading latest PawVision files..."
 TEMP_DIR=$(mktemp -d)
 cd "$TEMP_DIR"
 git clone --depth 1 -b "$BRANCH" "https://github.com/$REPO_USER/$REPO_NAME.git" .
+REPO_DIR="$TEMP_DIR"
 
 # Copy all Python files
 echo "🐍 Copying main Python files..."
@@ -210,7 +211,7 @@ else
 fi
 
 # Install Node.js if not available and frontend directory exists
-if [ -d "frontend" ]; then
+if [ -d "$REPO_DIR/frontend" ]; then
     if ! command -v npm >/dev/null 2>&1; then
         echo "📦 Installing Node.js for frontend build..."
         curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash - 2>/dev/null
@@ -226,7 +227,7 @@ if [ -d "frontend" ]; then
     # Build frontend if Node.js is available
     if command -v npm >/dev/null 2>&1; then
         echo "🔨 Building React frontend..."
-        cd frontend
+        cd "$REPO_DIR/frontend"
         
         # Install dependencies
         if npm install 2>/dev/null; then
@@ -250,7 +251,7 @@ if [ -d "frontend" ]; then
         else
             echo "⚠️  Frontend dependency installation failed - using fallback interface"
         fi
-        cd ..
+        cd "$REPO_DIR"
     else
         echo "📝 Node.js not available - using fallback interface"
     fi
