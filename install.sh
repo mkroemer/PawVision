@@ -329,34 +329,47 @@ except ImportError:
 "
 fi
 
-# Only restart service if it exists and we're updating
+# Restart or start service with timeout protection
 if systemctl is-active --quiet pawvision 2>/dev/null; then
     echo "🔄 Restarting PawVision service..."
-    sudo systemctl restart pawvision
+    # Force kill any existing process first
+    sudo systemctl kill pawvision 2>/dev/null || true
+    sleep 2
+    sudo systemctl reset-failed pawvision 2>/dev/null || true
+    sudo systemctl start pawvision
 elif $FRESH_INSTALL; then
     echo "🚀 Starting PawVision service for the first time..."
     sudo systemctl start pawvision
 fi
 
-# Check service status
-echo "📊 Service status:"
-sudo systemctl status pawvision --no-pager --lines=3 || echo "Service not running - check logs with: journalctl -u pawvision -f"
-
-if $FRESH_INSTALL; then
-    echo "✅ PawVision installation complete!"
-    echo "🌐 Access the web UI at: http://<pi-ip>:5000"
-    echo "📁 Installation directory: $INSTALL_DIR"
-    echo "🐍 Virtual environment: $INSTALL_DIR/venv"
-    echo "⚙️  Service status: systemctl status pawvision"
+# Wait a moment for service to start, then check status
+sleep 3
+echo "📊 Final service status:"
+if sudo systemctl is-active --quiet pawvision; then
+    echo "✅ PawVision service is running successfully"
+    echo "🌐 Access the web interface at: http://$(hostname -I | awk '{print $1}'):5000"
 else
-    echo "✅ PawVision update complete!"
-    echo "🚀 Service restarted with latest version."
-    echo "📝 Check logs: journalctl -u pawvision -f"
+    echo "⚠️  Service may not have started properly"
+    echo "📝 Check logs with: journalctl -u pawvision -f"
+    echo "🔧 Manual start: sudo systemctl start pawvision"
 fi
 
 echo ""
-echo "📖 Quick commands:"
+echo "🎉 PawVision $(if $FRESH_INSTALL; then echo 'installation'; else echo 'update'; fi) complete!"
+echo ""
+echo "📊 Summary:"
+echo "   📁 Installation directory: $INSTALL_DIR"
+echo "   🐍 Virtual environment: $INSTALL_DIR/venv"
+echo "   🌐 Web interface: http://$(hostname -I | awk '{print $1}'):5000"
+echo "   📝 Configuration: $SETTINGS_FILE"
+echo ""
+echo "📖 Service management:"
 echo "   Start:   sudo systemctl start pawvision"
 echo "   Stop:    sudo systemctl stop pawvision"
 echo "   Status:  sudo systemctl status pawvision"
 echo "   Logs:    journalctl -u pawvision -f"
+echo ""
+echo "✅ Installation script completed successfully!"
+
+# Ensure script exits properly
+exit 0
