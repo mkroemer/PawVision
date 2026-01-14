@@ -105,9 +105,6 @@ class VLCPlaybackEngine:
                 self.player = self.instance.media_player_new()
                 self.player.set_media(media)
                 
-                # Set fullscreen mode for video output
-                self.player.set_fullscreen(True)
-                
                 # Set volume (0-100)
                 self.player.audio_set_volume(volume)
                 
@@ -120,6 +117,9 @@ class VLCPlaybackEngine:
                 
                 # Wait for player to start
                 time.sleep(0.5)
+                
+                # Set fullscreen mode after video starts playing
+                self.player.set_fullscreen(True)
                 
                 # Seek to start position if specified
                 if start_time > 0:
