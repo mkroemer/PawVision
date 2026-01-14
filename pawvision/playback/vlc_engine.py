@@ -32,7 +32,11 @@ class VLCPlaybackEngine:
         
         # Initialize VLC instance
         try:
-            self.instance = vlc.Instance('--no-video-title-show', '--quiet')
+            self.instance = vlc.Instance(
+                '--no-video-title-show',
+                '--quiet',
+                '--fullscreen',
+            )
             logger.info("VLC instance created successfully")
         except Exception as e:
             logger.error("Failed to create VLC instance: %s", e)
@@ -100,6 +104,9 @@ class VLCPlaybackEngine:
 
                 self.player = self.instance.media_player_new()
                 self.player.set_media(media)
+                
+                # Set fullscreen mode for video output
+                self.player.set_fullscreen(True)
                 
                 # Set volume (0-100)
                 self.player.audio_set_volume(volume)
