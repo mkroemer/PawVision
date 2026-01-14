@@ -55,17 +55,17 @@ export const videoService = {
     return api.post('/stop');
   },
 
-  // Pause playback (not implemented in backend yet)
+  // Pause playback
   async pause(): Promise<ApiResponse> {
     return api.post('/pause');
   },
 
-  // Resume playback (not implemented in backend yet)
+  // Resume playback
   async resume(): Promise<ApiResponse> {
     return api.post('/resume');
   },
 
-  // Set volume (not implemented in backend yet)
+  // Set volume
   async setVolume(volume: number): Promise<ApiResponse> {
     return api.post('/volume', { volume });
   },

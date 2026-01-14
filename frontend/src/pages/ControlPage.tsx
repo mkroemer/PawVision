@@ -29,8 +29,12 @@ export default function ControlPage() {
 
   const handleStop = async () => {
     try {
-      await videoService.stop();
-      showSuccess(t('control.stopped'));
+      const response = await videoService.stop();
+      if (response.success) {
+        showSuccess(t('control.stopped'));
+      } else {
+        showError(response.message || t('messages.error'));
+      }
       await refetch();
     } catch (error) {
       showError(t('messages.error'));
@@ -39,8 +43,12 @@ export default function ControlPage() {
 
   const handlePause = async () => {
     try {
-      await videoService.pause();
-      showSuccess(t('control.paused'));
+      const response = await videoService.pause();
+      if (response.success) {
+        showSuccess(t('control.paused'));
+      } else {
+        showError(response.message || t('messages.error'));
+      }
       await refetch();
     } catch (error) {
       showError(t('messages.error'));
@@ -49,8 +57,12 @@ export default function ControlPage() {
 
   const handleResume = async () => {
     try {
-      await videoService.resume();
-      showSuccess(t('control.resumed'));
+      const response = await videoService.resume();
+      if (response.success) {
+        showSuccess(t('control.resumed'));
+      } else {
+        showError(response.message || t('messages.error'));
+      }
       await refetch();
     } catch (error) {
       showError(t('messages.error'));
