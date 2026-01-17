@@ -32,7 +32,11 @@ class VLCPlaybackEngine:
         
         # Initialize VLC instance
         try:
-            self.instance = vlc.Instance('--no-video-title-show', '--quiet')
+            self.instance = vlc.Instance(
+                '--no-video-title-show',
+                '--quiet',
+                '--fullscreen',
+            )
             logger.info("VLC instance created successfully")
         except Exception as e:
             logger.error("Failed to create VLC instance: %s", e)
@@ -113,6 +117,9 @@ class VLCPlaybackEngine:
                 
                 # Wait for player to start
                 time.sleep(0.5)
+                
+                # Set fullscreen mode after video starts playing
+                self.player.set_fullscreen(True)
                 
                 # Seek to start position if specified
                 if start_time > 0:
