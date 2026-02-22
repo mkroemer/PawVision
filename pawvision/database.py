@@ -66,6 +66,10 @@ class VideoEntry:
 
         return max(0.0, end - start)
 
+    def get_effective_duration(self) -> Optional[float]:
+        """Get effective playback duration (backward-compatible alias)."""
+        return self.get_playback_duration()
+
     def is_stream_expired(self) -> bool:
         """Check if YouTube stream URL is expired."""
         if not self.is_youtube or not self.stream_expires:
