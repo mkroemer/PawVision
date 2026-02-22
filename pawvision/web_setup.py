@@ -5,6 +5,8 @@ from werkzeug.exceptions import RequestEntityTooLarge
 
 from .security import SecurityValidator
 
+_INITIALIZED_ROUTE_MODULES = set()
+
 
 def create_app_context(
     app,
@@ -16,7 +18,7 @@ def create_app_context(
     validator,
     download_progress,
 ):
-    """Create app context dict shared with API route modules."""
+    """Create a context dictionary shared with API route modules."""
     return {
         "app": app,
         "config": config,
@@ -30,7 +32,7 @@ def create_app_context(
 
 
 def register_api_blueprints(app, app_context, logger):
-    """Register API blueprints with one-time route initialization per module."""
+    """Register API blueprints and initialize each route module only once."""
     from .api import (
         config_routes,
         dev_routes,
@@ -62,11 +64,12 @@ def register_api_blueprints(app, app_context, logger):
         if not enabled:
             continue
 
-        if getattr(module, "_routes_initialized", False):
+        module_name = module.__name__
+        if module_name in _INITIALIZED_ROUTE_MODULES:
             blueprint = getattr(module, blueprint_name)
         else:
             blueprint = getattr(module, init_name)(app_context)
-            module._routes_initialized = True
+            _INITIALIZED_ROUTE_MODULES.add(module_name)
 
         app.register_blueprint(blueprint)
         logger.debug("Registered %s routes", name)
@@ -75,7 +78,7 @@ def register_api_blueprints(app, app_context, logger):
 
 
 def register_error_handlers(app, logger):
-    """Register shared error handlers."""
+    """Register shared 404/413/500 Flask error handlers."""
 
     @app.errorhandler(404)
     def not_found(_error):
