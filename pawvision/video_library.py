@@ -149,7 +149,7 @@ class VideoLibraryManager:
             if not os.path.exists(video.path):
                 continue  # Skip missing files
 
-            effective_duration = video.get_effective_duration()
+            effective_duration = video.get_playback_duration()
             if effective_duration and effective_duration > 0:
                 playable.append(video)
 

@@ -286,7 +286,8 @@ class StatisticsManager:
                 total_viewing_result = conn.execute(
                     "SELECT COALESCE(SUM(duration), 0) FROM events WHERE event_type = 'video_viewing'"
                 ).fetchone()
-                total_viewing_minutes = round(total_viewing_result[0] / 60, 1) if total_viewing_result[0] else 0
+                total_viewing_seconds = total_viewing_result[0] or 0
+                total_viewing_minutes = round(total_viewing_seconds / 60, 1) if total_viewing_seconds else 0
 
                 # Get yesterday's viewing duration
                 yesterday_viewing_result = conn.execute(
@@ -300,6 +301,11 @@ class StatisticsManager:
                 recent_events = conn.execute(
                     "SELECT event_type, action, video_file, timestamp FROM events ORDER BY timestamp DESC LIMIT 10"
                 ).fetchall()
+
+                # Get total API calls
+                total_api_calls = conn.execute(
+                    "SELECT COUNT(*) FROM events WHERE event_type = 'api_call'"
+                ).fetchone()[0]
 
                 # Get hourly activity for today
                 hourly_data = conn.execute(
@@ -328,20 +334,37 @@ class StatisticsManager:
                         days_active = (date.today() - first_date).days + 1
                         daily_average = total_button_presses / max(1, days_active)
 
+                recent_activity = [
+                    {
+                        "action": f"{event[0]} - {event[1]}" + (f" ({event[2]})" if event[2] else ""),
+                        "timestamp": event[3],
+                    }
+                    for event in recent_events
+                ]
+
                 return {
+                    "button_presses": {
+                        "total": total_button_presses,
+                        "today": today_button_presses,
+                        "daily_average": daily_average,
+                        "peak_hour": peak_hour,
+                    },
+                    "api_calls": {
+                        "total": total_api_calls,
+                    },
+                    "video_viewing": {
+                        "total_duration": total_viewing_seconds,
+                        "yesterday_duration": yesterday_viewing_result[0] or 0,
+                    },
+                    "recent_events": recent_activity,
                     "total_button_presses": total_button_presses,
                     "today_button_presses": today_button_presses,
                     "daily_average": daily_average,
                     "peak_hour": peak_hour,
+                    "total_api_calls": total_api_calls,
                     "total_viewing_minutes": total_viewing_minutes,
                     "yesterday_viewing_minutes": yesterday_viewing_minutes,
-                    "recent_activity": [
-                        {
-                            "action": f"{event[0]} - {event[1]}" + (f" ({event[2]})" if event[2] else ""),
-                            "timestamp": event[3],
-                        }
-                        for event in recent_events
-                    ],
+                    "recent_activity": recent_activity,
                 }
 
         except sqlite3.Error as e:
