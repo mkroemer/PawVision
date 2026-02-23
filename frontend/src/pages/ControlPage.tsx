@@ -1,13 +1,17 @@
 import { useTranslation } from 'react-i18next';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { usePlaybackStatus } from '@/hooks/usePlaybackStatus';
 import { useVideos } from '@/hooks/useVideos';
 import { useToast } from '@/hooks/useToast';
 import { videoService } from '@/services/videoService';
+import { youtubeService } from '@/services/youtubeService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { Play, Square, Pause, PlayCircle, Volume2 } from 'lucide-react';
+import { Play, Square, Pause, PlayCircle, Volume2, SkipForward } from 'lucide-react';
 import { HDMIStreamViewer } from '@/components/HDMIStreamViewer';
 
 export default function ControlPage() {
@@ -16,6 +20,24 @@ export default function ControlPage() {
   const { videos } = useVideos();
   const { showSuccess, showError } = useToast();
   const [volume, setVolume] = useState(100);
+  const [simpleMode, setSimpleMode] = useState(true);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [youtubeUrl, setYoutubeUrl] = useState('');
+  const [youtubeOffline, setYoutubeOffline] = useState(true);
+
+  useEffect(() => {
+    const value = localStorage.getItem('pawvision_simple_mode');
+    if (value !== null) {
+      setSimpleMode(value === 'true');
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('pawvision_simple_mode', String(simpleMode));
+    if (!simpleMode) {
+      setShowAdvanced(true);
+    }
+  }, [simpleMode]);
 
   const handlePlay = async (videoPath: string) => {
     try {
@@ -32,6 +54,20 @@ export default function ControlPage() {
       const response = await videoService.stop();
       if (response.success) {
         showSuccess(t('control.stopped'));
+      } else {
+        showError(response.message || t('messages.error'));
+      }
+      await refetch();
+    } catch (error) {
+      showError(t('messages.error'));
+    }
+  };
+
+  const handleNext = async () => {
+    try {
+      const response = await videoService.next();
+      if (response.success) {
+        showSuccess('Playing next video');
       } else {
         showError(response.message || t('messages.error'));
       }
@@ -72,7 +108,7 @@ export default function ControlPage() {
   const handleVolumeChange = async (value: number[]) => {
     const newVolume = value[0];
     setVolume(newVolume);
-    
+
     // Only send to backend if video is playing
     if (status.is_playing) {
       try {
@@ -80,6 +116,23 @@ export default function ControlPage() {
       } catch (error) {
         console.error('Failed to set volume:', error);
       }
+    }
+  };
+
+  const handleQuickYoutubeAdd = async () => {
+    if (!youtubeUrl.trim()) return;
+    try {
+      const result = youtubeOffline
+        ? await youtubeService.download(youtubeUrl.trim())
+        : await youtubeService.add(youtubeUrl.trim());
+      if (result.success) {
+        showSuccess(youtubeOffline ? 'YouTube video added and downloading' : 'YouTube video added');
+        setYoutubeUrl('');
+      } else {
+        showError(result.message || t('messages.error'));
+      }
+    } catch (error) {
+      showError(t('messages.error'));
     }
   };
 
@@ -100,6 +153,14 @@ export default function ControlPage() {
         <p className="text-muted-foreground">{t('control.description')}</p>
       </div>
 
+      <div className="flex items-center justify-between rounded-lg border p-3">
+        <div className="space-y-1">
+          <Label htmlFor="simple-mode-toggle">Simple Mode</Label>
+          <p className="text-xs text-muted-foreground">Shows only practical core controls.</p>
+        </div>
+        <Switch id="simple-mode-toggle" checked={simpleMode} onCheckedChange={setSimpleMode} />
+      </div>
+
       <div className="grid gap-6 md:grid-cols-2">
         {/* Playback Control */}
         <Card>
@@ -111,61 +172,50 @@ export default function ControlPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex gap-2">
-              {/* Pause/Resume Button */}
               {isPaused ? (
-                <Button
-                  onClick={handleResume}
-                  variant="default"
-                  className="flex-1"
-                >
+                <Button onClick={handleResume} variant="default" className="flex-1">
                   <PlayCircle className="mr-2 h-4 w-4" />
                   {t('control.resume')}
                 </Button>
               ) : (
-                <Button
-                  onClick={handlePause}
-                  variant="default"
-                  className="flex-1"
-                  disabled={!status.is_playing}
-                >
+                <Button onClick={handlePause} variant="default" className="flex-1" disabled={!status.is_playing}>
                   <Pause className="mr-2 h-4 w-4" />
                   {t('control.pause')}
                 </Button>
               )}
-              
-              {/* Stop Button */}
-              <Button
-                onClick={handleStop}
-                variant="destructive"
-                className="flex-1"
-                disabled={!status.is_playing}
-              >
+
+              <Button onClick={handleStop} variant="destructive" className="flex-1" disabled={!status.is_playing}>
                 <Square className="mr-2 h-4 w-4" />
                 {t('control.stop')}
               </Button>
+
+              <Button onClick={handleNext} variant="secondary" className="flex-1">
+                <SkipForward className="mr-2 h-4 w-4" />
+                Next
+              </Button>
             </div>
 
-            {/* Volume Control */}
-            <div className="space-y-2 pt-2 border-t">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Volume2 className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">{t('control.volume')}</span>
+            {(!simpleMode || showAdvanced) && (
+              <div className="space-y-2 pt-2 border-t">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Volume2 className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">{t('control.volume')}</span>
+                  </div>
+                  <span className="text-sm text-muted-foreground">{volume}%</span>
                 </div>
-                <span className="text-sm text-muted-foreground">{volume}%</span>
+                <Slider
+                  value={[volume]}
+                  onValueChange={handleVolumeChange}
+                  max={100}
+                  step={1}
+                  disabled={!status.is_playing}
+                  className="w-full"
+                />
               </div>
-              <Slider
-                value={[volume]}
-                onValueChange={handleVolumeChange}
-                max={100}
-                step={1}
-                disabled={!status.is_playing}
-                className="w-full"
-              />
-            </div>
+            )}
 
-            {/* Playing Progress */}
-            {status.is_playing && status.current_video && (
+            {(!simpleMode || showAdvanced) && status.is_playing && status.current_video && (
               <div className="space-y-2 pt-2 border-t">
                 <div className="text-sm">
                   <div className="font-medium text-foreground mb-1">
@@ -178,6 +228,11 @@ export default function ControlPage() {
                   )}
                 </div>
               </div>
+            )}
+            {simpleMode && (
+              <Button variant="ghost" className="w-full" onClick={() => setShowAdvanced((prev) => !prev)}>
+                {showAdvanced ? 'Hide advanced controls' : 'Show advanced controls'}
+              </Button>
             )}
           </CardContent>
         </Card>
@@ -208,12 +263,31 @@ export default function ControlPage() {
                 ))
               )}
             </div>
+            <div className="space-y-2 pt-4 border-t mt-4">
+              <Label htmlFor="quick-youtube-url">Quick YouTube add/download</Label>
+              <Input
+                id="quick-youtube-url"
+                placeholder="https://youtube.com/watch?v=..."
+                value={youtubeUrl}
+                onChange={(e) => setYoutubeUrl(e.target.value)}
+              />
+              <div className="flex items-center justify-between">
+                <Label htmlFor="quick-youtube-offline" className="text-sm">Download for offline playback</Label>
+                <Switch
+                  id="quick-youtube-offline"
+                  checked={youtubeOffline}
+                  onCheckedChange={setYoutubeOffline}
+                />
+              </div>
+              <Button onClick={handleQuickYoutubeAdd} className="w-full" disabled={!youtubeUrl.trim()}>
+                Add YouTube
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* HDMI Stream Viewer */}
-      <HDMIStreamViewer />
+      {(!simpleMode || showAdvanced) && <HDMIStreamViewer />}
     </div>
   );
 }

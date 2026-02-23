@@ -7,20 +7,41 @@ import type { Video } from '@/types';
 export const useVideos = () => {
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
 
   const fetchVideos = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await videoService.getVideos();
-      setVideos(data);
+      const result = await videoService.getVideos(1, 20);
+      setVideos(result.videos);
+      setPage(1);
+      setHasMore(result.pagination.has_more);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch videos');
     } finally {
       setLoading(false);
     }
   }, []);
+
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore) return;
+    try {
+      setLoadingMore(true);
+      const nextPage = page + 1;
+      const result = await videoService.getVideos(nextPage, 20);
+      setVideos((prev) => [...prev, ...result.videos]);
+      setPage(nextPage);
+      setHasMore(result.pagination.has_more);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch videos');
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [hasMore, loadingMore, page]);
 
   useEffect(() => {
     fetchVideos();
@@ -40,5 +61,5 @@ export const useVideos = () => {
     };
   }, [fetchVideos]);
 
-  return { videos, loading, error, refetch: fetchVideos };
+  return { videos, loading, loadingMore, hasMore, error, refetch: fetchVideos, loadMore };
 };

@@ -71,6 +71,13 @@ export interface ApiResponse<T = any> {
   data?: T;
 }
 
+export interface VideoPagination {
+  page: number;
+  per_page: number;
+  total: number;
+  has_more: boolean;
+}
+
 export interface UploadProgress {
   filename: string;
   progress: number;
