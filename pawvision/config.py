@@ -52,6 +52,10 @@ class PawVisionConfig:
     youtube_cache_dir: str = "./videos/youtube_cache"  # Directory for YouTube cookies (for authentication)
     youtube_default_quality: str = "720p"  # Default quality for YouTube videos
     youtube_auto_refresh_streams: bool = True  # Auto-refresh expired stream URLs
+    prefer_local_playback: bool = True  # Prefer downloaded/local files over temporary stream URLs
+    housekeeping_enabled: bool = True
+    housekeeping_interval_minutes: int = 60
+    youtube_max_download_storage_gb: Optional[float] = None
     
     # Playback settings
     auto_play: bool = False  # Automatically play videos when they finish
@@ -113,6 +117,11 @@ class PawVisionConfig:
         # Motion stop validation
         if self.motion_stop_timeout_seconds < 0:
             errors.append("Motion stop timeout must be non-negative")
+
+        if self.housekeeping_interval_minutes <= 0:
+            errors.append("Housekeeping interval must be positive")
+        if self.youtube_max_download_storage_gb is not None and self.youtube_max_download_storage_gb <= 0:
+            errors.append("YouTube max download storage must be positive when set")
 
         # Schedule validation
         for time_str in self.play_schedule:

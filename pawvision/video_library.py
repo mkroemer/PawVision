@@ -233,3 +233,12 @@ class VideoLibraryManager:
     def cleanup_youtube_downloads(self, max_age_days: int = 30):
         """Clean up old YouTube downloads."""
         self.youtube_manager.cleanup_expired_downloads(max_age_days)
+
+    def run_housekeeping(self, max_download_storage_gb: Optional[float] = None) -> int:
+        """Run YouTube-related housekeeping and return number of cleaned items."""
+        cleaned_items = 0
+        cleaned_items += self.youtube_manager.cleanup_expired_stream_urls(self.db)
+        cleaned_items += self.youtube_manager.cleanup_stale_thumbnails(self.get_all_videos())
+        if max_download_storage_gb:
+            cleaned_items += self.youtube_manager.enforce_download_storage_limit(max_download_storage_gb)
+        return cleaned_items

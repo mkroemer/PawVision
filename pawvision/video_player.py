@@ -29,6 +29,7 @@ class VideoPlayer:
         self.last_playback_end = None  # Track when last video ended
         self.motion_detected = False  # Track motion sensor state
         self.current_video = None  # Current video path for statistics
+        self.prefer_local_playback = config.prefer_local_playback
 
         # Initialize VLC playback engine (with fallback to old engine)
         try:
@@ -124,7 +125,7 @@ class VideoPlayer:
 
         # Handle YouTube videos - prefer downloaded file, then stream URL, then YouTube URL
         # 1. Check if we have a downloaded file
-        if video_entry.download_path and os.path.exists(video_entry.download_path):
+        if self.prefer_local_playback and video_entry.download_path and os.path.exists(video_entry.download_path):
             self.logger.debug("Using downloaded file for YouTube video: %s", video_entry.download_path)
             return video_entry.download_path
 
@@ -192,6 +193,14 @@ class VideoPlayer:
         # Sync library with filesystem first
         self.sync_video_library()
         return self.library_manager.get_playable_videos()
+
+    def run_housekeeping(self) -> None:
+        """Run low-frequency YouTube/thumbnail housekeeping tasks."""
+        try:
+            max_download_storage_gb = getattr(self.config, "youtube_max_download_storage_gb", None)
+            self.library_manager.run_housekeeping(max_download_storage_gb=max_download_storage_gb)
+        except Exception as e:
+            self.logger.error("Housekeeping run failed: %s", e)
 
     def get_video_duration(self, file_path: str) -> Optional[float]:
         """Get video duration in seconds using mediainfo with database caching."""

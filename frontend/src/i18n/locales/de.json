@@ -17,6 +17,8 @@
     "stop": "Stoppen",
     "pause": "Pausieren",
     "resume": "Fortsetzen",
+    "next": "Nächstes",
+    "nextPlaying": "Nächstes Video wird abgespielt",
     "volume": "Lautstärke",
     "status": "Status",
     "playing": "Spielt ab",

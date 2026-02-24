@@ -1,18 +1,32 @@
 // Video API service
 
 import { api } from './api';
-import type { Video, PlaybackStatus, ApiResponse } from '@/types';
+import type { Video, PlaybackStatus, ApiResponse, VideoPagination } from '@/types';
+
+interface VideoListResponse {
+  videos: Video[];
+  pagination: VideoPagination;
+}
 
 export const videoService = {
-  // Get all videos
-  async getVideos(): Promise<Video[]> {
-    const response = await api.get<Video[]>('/video/list');
-    // The /video/list endpoint returns an array directly, not wrapped in { data: [...] }
-    // So if response is an array, use it directly; otherwise check response.data
-    if (Array.isArray(response)) {
-      return response;
+  // Get videos with optional pagination
+  async getVideos(page: number = 1, perPage: number = 20): Promise<VideoListResponse> {
+    const response = await api.get<any>(`/video/list?paginated=1&page=${page}&per_page=${perPage}`);
+    const data = response.data || response;
+
+    if (!data.success) {
+      throw new Error(data.error || data.message || 'Failed to fetch videos');
     }
-    return response.data || [];
+
+    return {
+      videos: data.videos || [],
+      pagination: data.pagination || {
+        page,
+        per_page: perPage,
+        total: 0,
+        has_more: false,
+      },
+    };
   },
 
   // Get playback status
@@ -53,6 +67,11 @@ export const videoService = {
   // Stop playback
   async stop(): Promise<ApiResponse> {
     return api.post('/stop');
+  },
+
+  // Next video (random)
+  async next(): Promise<ApiResponse> {
+    return api.post('/next');
   },
 
   // Pause playback

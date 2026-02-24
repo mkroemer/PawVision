@@ -47,7 +47,7 @@ const VideoPlaceholder = () => (
 
 export default function LibraryPage() {
   const { t } = useTranslation();
-  const { videos, refetch } = useVideos();
+  const { videos, refetch, hasMore, loadMore, loadingMore } = useVideos();
   const { showSuccess, showError } = useToast();
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [youtubeStartTime, setYoutubeStartTime] = useState('');
@@ -670,6 +670,7 @@ export default function LibraryPage() {
                   <img
                     src={video.thumbnail}
                     alt={video.title}
+                    loading="lazy"
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       // Show placeholder if image fails to load
@@ -742,6 +743,13 @@ export default function LibraryPage() {
               </CardFooter>
             </Card>
           ))}
+        </div>
+      )}
+      {hasMore && (
+        <div className="flex justify-center">
+          <Button variant="outline" onClick={loadMore} disabled={loadingMore}>
+            {loadingMore ? 'Loading…' : 'Load more'}
+          </Button>
         </div>
       )}
     </div>
