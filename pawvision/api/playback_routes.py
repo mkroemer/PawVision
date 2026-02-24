@@ -56,14 +56,14 @@ def init_playback_routes(app_context):
         """Stop current playback and start next random video."""
         try:
             if video_player.is_playing():
-                video_player.stop_video(reason='web-next')
+                video_player.stop_video(reason='web')
 
             success = video_player.play_random_video(trigger='web-next')
             if statistics_manager:
                 statistics_manager.record_api_call('next')
 
             if success:
-                return jsonify({'status': 'success'}), 200
+                return jsonify({'success': True, 'status': 'success'}), 200
             return jsonify({'error': 'Failed to start next video'}), 500
         except Exception as e:
             logger.error('Next error: %s', e)

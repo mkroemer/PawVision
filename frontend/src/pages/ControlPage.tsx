@@ -67,7 +67,7 @@ export default function ControlPage() {
     try {
       const response = await videoService.next();
       if (response.success) {
-        showSuccess('Playing next video');
+        showSuccess(t('control.nextPlaying'));
       } else {
         showError(response.message || t('messages.error'));
       }
@@ -191,7 +191,7 @@ export default function ControlPage() {
 
               <Button onClick={handleNext} variant="secondary" className="flex-1">
                 <SkipForward className="mr-2 h-4 w-4" />
-                Next
+                {t('control.next')}
               </Button>
             </div>
 

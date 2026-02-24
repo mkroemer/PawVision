@@ -88,3 +88,37 @@ class TestPiImprovements(unittest.TestCase):
         self.assertEqual(payload["pagination"]["page"], 2)
         self.assertEqual(payload["pagination"]["total"], 25)
         self.assertTrue(payload["pagination"]["has_more"])
+
+    def test_next_endpoint_uses_web_stop_reason_and_success_response(self):
+        config_manager = ConfigManager(self.config_file, dev_mode=True)
+        config = config_manager.load_config()
+        stats_manager = StatisticsManager(
+            stats_file=self.stats_file,
+            db_file=self.stats_db,
+            enabled=True,
+        )
+
+        video_player = Mock()
+        video_player.video_files = []
+        video_player.video_dirs = [self.temp_dir]
+        video_player.current_video = None
+        video_player.is_playing = Mock(return_value=True)
+        video_player.get_all_videos = Mock(return_value=[])
+        video_player.get_video_library_entries = Mock(
+            return_value=[
+                VideoEntry(path=f"/videos/video_{idx}.mp4", title=f"Video {idx}", duration=60)
+                for idx in range(1, 26)
+            ]
+        )
+        video_player.stop_video = Mock(return_value=True)
+        video_player.play_random_video = Mock(return_value=True)
+
+        gpio_manager = Mock()
+        web_interface = WebInterface(config, video_player, stats_manager, gpio_manager, config_manager)
+        client = web_interface.app.test_client()
+
+        response = client.post("/api/next")
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertTrue(payload["success"])
+        video_player.stop_video.assert_called_once_with(reason="web")

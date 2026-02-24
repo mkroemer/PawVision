@@ -11,10 +11,10 @@ interface VideoListResponse {
 export const videoService = {
   // Get videos with optional pagination
   async getVideos(page: number = 1, perPage: number = 20): Promise<VideoListResponse> {
-    const response = await fetch(`/api/video/list?paginated=1&page=${page}&per_page=${perPage}`);
-    const data = await response.json();
+    const response = await api.get<any>(`/video/list?paginated=1&page=${page}&per_page=${perPage}`);
+    const data = response.data || response;
 
-    if (!response.ok || !data.success) {
+    if (!data.success) {
       throw new Error(data.error || data.message || 'Failed to fetch videos');
     }
 

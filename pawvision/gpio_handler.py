@@ -205,10 +205,10 @@ class Scheduler:
 
     def _run_housekeeping_if_needed(self):
         """Run video housekeeping tasks at a low frequency."""
-        if not getattr(self.config, "housekeeping_enabled", True):
+        if not self.config.housekeeping_enabled:
             return
 
-        interval_minutes = max(1, int(getattr(self.config, "housekeeping_interval_minutes", 60)))
+        interval_minutes = max(1, int(self.config.housekeeping_interval_minutes))
         now = datetime.now()
         if self._last_housekeeping_run and (now - self._last_housekeeping_run).total_seconds() < interval_minutes * 60:
             return

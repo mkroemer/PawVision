@@ -17,6 +17,8 @@
     "stop": "Stop",
     "pause": "Pause",
     "resume": "Resume",
+    "next": "Next",
+    "nextPlaying": "Playing next video",
     "volume": "Volume",
     "status": "Status",
     "playing": "Playing",

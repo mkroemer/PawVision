@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { videoService } from '@/services/videoService';
 import type { Video } from '@/types';
 
+const PAGE_SIZE = 20;
+
 export const useVideos = () => {
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
@@ -16,7 +18,7 @@ export const useVideos = () => {
     try {
       setLoading(true);
       setError(null);
-      const result = await videoService.getVideos(1, 20);
+      const result = await videoService.getVideos(1, PAGE_SIZE);
       setVideos(result.videos);
       setPage(1);
       setHasMore(result.pagination.has_more);
@@ -32,7 +34,7 @@ export const useVideos = () => {
     try {
       setLoadingMore(true);
       const nextPage = page + 1;
-      const result = await videoService.getVideos(nextPage, 20);
+      const result = await videoService.getVideos(nextPage, PAGE_SIZE);
       setVideos((prev) => [...prev, ...result.videos]);
       setPage(nextPage);
       setHasMore(result.pagination.has_more);

@@ -29,7 +29,7 @@ class VideoPlayer:
         self.last_playback_end = None  # Track when last video ended
         self.motion_detected = False  # Track motion sensor state
         self.current_video = None  # Current video path for statistics
-        self.prefer_local_playback = getattr(config, "prefer_local_playback", True)
+        self.prefer_local_playback = config.prefer_local_playback
 
         # Initialize VLC playback engine (with fallback to old engine)
         try:
