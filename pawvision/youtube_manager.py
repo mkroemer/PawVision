@@ -561,3 +561,90 @@ class YouTubeManager:
             self.logger.error("Error getting qualities for %s: %s", video_id, e)
 
         return ["720p"]  # Default fallback
+
+    def cleanup_expired_stream_urls(self, db) -> int:
+        """Clear expired stream URLs from YouTube entries in the database."""
+        cleaned_count = 0
+        try:
+            for entry in db.get_all_videos():
+                if not entry.is_youtube:
+                    continue
+                if entry.stream_url and entry.is_stream_expired():
+                    entry.stream_url = None
+                    entry.stream_expires = None
+                    if db.add_or_update_video(entry):
+                        cleaned_count += 1
+        except Exception as e:  # noqa: BLE001
+            self.logger.error("Error cleaning expired stream URLs: %s", e)
+        return cleaned_count
+
+    def cleanup_stale_thumbnails(self, valid_entries: List[VideoEntry]) -> int:
+        """Remove stale thumbnail files no longer referenced by library entries."""
+        cleaned_count = 0
+        valid_paths = {
+            os.path.abspath(entry.thumbnail_path)
+            for entry in valid_entries
+            if entry.thumbnail_path
+        }
+
+        thumbnail_dirs = set()
+        for vdir in self.video_directories:
+            thumbnail_dirs.add(os.path.join(vdir, "thumbnails"))
+
+        for thumbnail_dir in thumbnail_dirs:
+            if not os.path.isdir(thumbnail_dir):
+                continue
+            for filename in os.listdir(thumbnail_dir):
+                path = os.path.abspath(os.path.join(thumbnail_dir, filename))
+                if not os.path.isfile(path):
+                    continue
+                if path in valid_paths:
+                    continue
+                try:
+                    os.remove(path)
+                    cleaned_count += 1
+                except OSError as e:
+                    self.logger.error("Error removing stale thumbnail %s: %s", path, e)
+
+        return cleaned_count
+
+    def enforce_download_storage_limit(self, max_storage_gb: float) -> int:
+        """Delete oldest YouTube downloads when total size exceeds the configured threshold."""
+        if max_storage_gb <= 0:
+            return 0
+
+        max_bytes = int(max_storage_gb * 1024 * 1024 * 1024)
+        files = []
+        total_size = 0
+
+        for video_dir in self.video_directories:
+            if not os.path.isdir(video_dir):
+                continue
+            for filename in os.listdir(video_dir):
+                if not re.match(r"^[a-zA-Z0-9_-]{11}\.\w+$", filename):
+                    continue
+                path = os.path.join(video_dir, filename)
+                if not os.path.isfile(path):
+                    continue
+                try:
+                    stat = os.stat(path)
+                except OSError:
+                    continue
+                files.append((path, stat.st_mtime, stat.st_size))
+                total_size += stat.st_size
+
+        if total_size <= max_bytes:
+            return 0
+
+        files.sort(key=lambda item: item[1])  # oldest first
+        cleaned = 0
+        for path, _, size in files:
+            if total_size <= max_bytes:
+                break
+            try:
+                os.remove(path)
+                total_size -= size
+                cleaned += 1
+            except OSError as e:
+                self.logger.error("Error removing old download %s: %s", path, e)
+        return cleaned

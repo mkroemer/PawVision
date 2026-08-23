@@ -30,6 +30,7 @@ state-changing API requests from scripts or reverse proxies, set
 Complete documentation is available at: **[PawVision Docs](https://mkroemer.github.io/PawVision/)**
 
 - [🏠 Home](https://mkroemer.github.io/PawVision/) - Overview and quick start
+- [🏗️ Architecture & Pi Roadmap](https://mkroemer.github.io/PawVision/architecture.html) - Focused architecture guidance for a small Raspberry Pi setup
 - [⚙️ Configuration Guide](https://mkroemer.github.io/PawVision/configuration.html) - Complete setup and configuration
 - [� API Reference](https://mkroemer.github.io/PawVision/api.html) - REST API documentation
 - [🔧 Hardware Setup](https://mkroemer.github.io/PawVision/hardware.html) - Hardware connection and configuration

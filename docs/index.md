@@ -37,6 +37,7 @@ PawVision is a Raspberry Pi-based "Pet TV" system that plays random videos for y
 ## Documentation
 
 - [📋 Configuration Guide](configuration.html) - Complete setup and configuration
+- [🏗️ Architecture & Pi Roadmap](architecture.html) - Architecture overview and focused improvement plan
 - [🔌 API Reference](api.html) - REST API documentation
 - [📝 Release Notes](releases.html) - Latest updates and changes
 - [🛠️ Hardware Setup](hardware.md) - How to connect and configure hardware

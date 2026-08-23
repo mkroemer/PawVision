@@ -168,6 +168,7 @@ class Scheduler:
         self.running = False
         self.scheduler_thread = None
         self._last_checked = None
+        self._last_housekeeping_run = None
 
     def start(self):
         """Start the scheduler loop."""
@@ -195,11 +196,26 @@ class Scheduler:
         """Main scheduler loop."""
         while self.running:
             try:
+                self._run_housekeeping_if_needed()
                 self._check_schedule()
                 time.sleep(10)  # Check every 10 seconds
             except (OSError, KeyboardInterrupt) as e:
                 self.logger.error("Error in scheduler loop: %s", e)
                 time.sleep(30)  # Wait longer after error
+
+    def _run_housekeeping_if_needed(self):
+        """Run video housekeeping tasks at a low frequency."""
+        if not self.config.housekeeping_enabled:
+            return
+
+        interval_minutes = max(1, int(self.config.housekeeping_interval_minutes))
+        now = datetime.now()
+        if self._last_housekeeping_run and (now - self._last_housekeeping_run).total_seconds() < interval_minutes * 60:
+            return
+
+        if hasattr(self.video_player, "run_housekeeping"):
+            self.video_player.run_housekeeping()
+            self._last_housekeeping_run = now
 
     def _check_schedule(self):
         """Check if any scheduled plays should trigger."""

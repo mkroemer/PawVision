@@ -4,11 +4,10 @@ import logging
 import os
 import secrets
 import hmac
-from datetime import datetime
-from flask import Flask, request, send_from_directory, jsonify
-from werkzeug.exceptions import RequestEntityTooLarge
+from flask import Flask, jsonify, request, send_from_directory
 
 from .security import SecurityValidator, setup_security_headers
+from .web_setup import create_app_context, register_api_blueprints, register_error_handlers
 
 
 class WebInterface:
@@ -29,7 +28,10 @@ class WebInterface:
         self.app = Flask(__name__, template_folder="../templates", static_folder="../static")
 
         # Configure Flask
-        self.app.config["SECRET_KEY"] = os.environ.get("PAWVISION_SECRET_KEY", secrets.token_urlsafe(32))
+        self.app.config["SECRET_KEY"] = os.getenv(
+            "PAWVISION_SECRET_KEY",
+            getattr(self.config, "secret_key", None) or secrets.token_urlsafe(32),
+        )
         self.app.config["MAX_CONTENT_LENGTH"] = SecurityValidator.MAX_FILE_SIZE
         self.api_token = os.environ.get("PAWVISION_API_TOKEN")
 
@@ -108,89 +110,21 @@ class WebInterface:
 
     def _register_blueprints(self):
         """Register all API blueprints."""
-        from .api import (
-            video_routes,
-            youtube_routes,
-            playback_routes,
-            config_routes,
-            statistics_routes,
-            dev_routes,
-            stream_routes,
+        app_context = create_app_context(
+            app=self.app,
+            config=self.config,
+            video_player=self.video_player,
+            statistics_manager=self.statistics_manager,
+            gpio_manager=self.gpio_manager,
+            config_manager=self.config_manager,
+            validator=self.validator,
+            download_progress=self.download_progress,
         )
-
-        # Create app context dict to pass to blueprints
-        app_context = {
-            'app': self.app,
-            'config': self.config,
-            'video_player': self.video_player,
-            'statistics_manager': self.statistics_manager,
-            'gpio_manager': self.gpio_manager,
-            'config_manager': self.config_manager,
-            'validator': self.validator,
-            'download_progress': self.download_progress,
-        }
-
-        # Initialize and register each blueprint
-        self.logger.info("Registering API blueprints...")
-        
-        self.app.register_blueprint(video_routes.init_video_routes(app_context))
-        self.logger.debug("Registered video routes")
-        
-        self.app.register_blueprint(youtube_routes.init_youtube_routes(app_context))
-        self.logger.debug("Registered YouTube routes")
-        
-        self.app.register_blueprint(playback_routes.init_playback_routes(app_context))
-        self.logger.debug("Registered playback routes")
-        
-        self.app.register_blueprint(config_routes.init_config_routes(app_context))
-        self.logger.debug("Registered config routes")
-        
-        self.app.register_blueprint(statistics_routes.init_statistics_routes(app_context))
-        self.logger.debug("Registered statistics routes")
-        
-        self.app.register_blueprint(stream_routes.init_stream_routes(app_context))
-        self.logger.debug("Registered stream routes")
-        
-        # Register dev routes only in dev mode
-        if getattr(self.config, "dev_mode", False):
-            self.app.register_blueprint(dev_routes.init_dev_routes(app_context))
-            self.logger.debug("Registered dev routes (dev mode enabled)")
-        
-        self.logger.info("All API blueprints registered successfully")
+        register_api_blueprints(self.app, app_context, self.logger)
 
     def _register_error_handlers(self):
         """Register error handlers."""
-
-        @self.app.errorhandler(404)
-        def not_found(_error):
-            """Handle 404 errors."""
-            return jsonify({"error": "Not found"}), 404
-
-        @self.app.errorhandler(413)
-        def file_too_large(_error):
-            """Handle file too large errors."""
-            max_size_gb = SecurityValidator.MAX_FILE_SIZE / (1024 * 1024 * 1024)
-            return jsonify({
-                "error": f"File too large. Maximum upload size is {max_size_gb:.0f}GB",
-                "max_size_bytes": SecurityValidator.MAX_FILE_SIZE,
-                "max_size_gb": max_size_gb
-            }), 413
-
-        @self.app.errorhandler(RequestEntityTooLarge)
-        def handle_request_entity_too_large(_error):
-            """Handle request entity too large errors."""
-            max_size_gb = SecurityValidator.MAX_FILE_SIZE / (1024 * 1024 * 1024)
-            return jsonify({
-                "error": f"File too large. Maximum upload size is {max_size_gb:.0f}GB",
-                "max_size_bytes": SecurityValidator.MAX_FILE_SIZE,
-                "max_size_gb": max_size_gb
-            }), 413
-
-        @self.app.errorhandler(500)
-        def internal_error(error):
-            """Handle 500 errors."""
-            self.logger.error("Internal server error: %s", error)
-            return jsonify({"error": "Internal server error"}), 500
+        register_error_handlers(self.app, self.logger)
 
     def run(self, host: str = "0.0.0.0", port: int = None, debug: bool = False):
         """Run the Flask application."""

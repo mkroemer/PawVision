@@ -87,7 +87,20 @@ def init_video_routes(app_context):
     def list_videos():
         """Get video list (alias for /library for frontend compatibility)."""
         try:
+            page = request.args.get('page', type=int)
+            per_page = request.args.get('per_page', type=int)
+            paginated = request.args.get('paginated', '').lower() in ('1', 'true', 'yes') or page is not None or per_page is not None
+
             video_entries = video_player.get_video_library_entries()
+            total = len(video_entries)
+
+            if page is not None or per_page is not None:
+                page = max(1, page or 1)
+                per_page = max(1, min(100, per_page or 20))
+                start = (page - 1) * per_page
+                end = start + per_page
+                video_entries = video_entries[start:end]
+
             # Transform VideoEntry objects to match frontend expected format
             video_list = []
             for idx, entry in enumerate(video_entries):
@@ -104,7 +117,7 @@ def init_video_routes(app_context):
                     thumbnail_url = f"/thumbnails/{os.path.basename(entry.thumbnail_path)}"
                 
                 video_list.append({
-                    'id': idx + 1,  # Generate sequential IDs
+                    'id': idx + 1 + (((page - 1) * per_page) if page and per_page else 0),  # Generate stable IDs for paged data
                     'title': entry.get_display_title(),
                     'filename': filename,
                     'path': entry.path,  # Include path for edit operations
@@ -119,6 +132,19 @@ def init_video_routes(app_context):
                     'custom_start_time': entry.custom_start_time,
                     'custom_end_time': entry.custom_end_time
                 })
+
+            if paginated:
+                return jsonify({
+                    'success': True,
+                    'videos': video_list,
+                    'pagination': {
+                        'page': page or 1,
+                        'per_page': per_page or total,
+                        'total': total,
+                        'has_more': bool(page and per_page and (page * per_page) < total),
+                    },
+                }), 200
+
             return jsonify(video_list), 200
         except Exception as e:
             logger.error('Error getting video list: %s', e)
