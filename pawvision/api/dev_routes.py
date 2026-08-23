@@ -9,6 +9,8 @@ logger = logging.getLogger(__name__)
 
 def init_dev_routes(app_context):
     """Initialize development routes with app context."""
+    global dev_bp
+    dev_bp = Blueprint('dev', __name__, url_prefix='/dev')
     gpio_manager = app_context.get('gpio_manager')
     video_player = app_context['video_player']
 

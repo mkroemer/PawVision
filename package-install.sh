@@ -40,24 +40,18 @@ sudo apt install -y python3 python3-pip python3-venv mpv sqlite3 mediainfo curl
 echo "📺 Installing VLC components..."
 sudo apt install -y vlc-bin vlc-plugin-base libvlc-dev || echo "⚠️ Some VLC components may not be available"
 
-# Create virtual environment
-echo "🐍 Setting up Python virtual environment..."
-if [ ! -d "$INSTALL_DIR/venv" ]; then
-    python3 -m venv "$INSTALL_DIR/venv"
-fi
-
-# Install Python dependencies
-echo "📦 Installing Python dependencies..."
-source "$INSTALL_DIR/venv/bin/activate"
-pip install -r requirements.txt
-
 # Copy all files
 echo "📁 Installing PawVision files..."
 cp main.py "$INSTALL_DIR/"
 cp -r pawvision/ "$INSTALL_DIR/"
 cp -r templates/ "$INSTALL_DIR/"
 cp -r static/ "$INSTALL_DIR/"
-cp requirements.txt "$INSTALL_DIR/"
+cp pyproject.toml uv.lock "$INSTALL_DIR/"
+
+# Install uv locally and create the locked production environment.
+echo "📦 Installing Python dependencies with uv..."
+curl -LsSf https://astral.sh/uv/install.sh | UV_INSTALL_DIR="$INSTALL_DIR/.uv-bin" sh
+(cd "$INSTALL_DIR" && "$INSTALL_DIR/.uv-bin/uv" sync --locked --no-dev)
 
 # Set permissions
 sudo chown -R pi:pi "$INSTALL_DIR"
@@ -82,11 +76,13 @@ Description=PawVision Service
 After=network.target
 
 [Service]
-ExecStart=$INSTALL_DIR/venv/bin/python $INSTALL_DIR/main.py
+ExecStart=$INSTALL_DIR/.venv/bin/python $INSTALL_DIR/main.py
 Restart=always
 User=pi
 WorkingDirectory=$INSTALL_DIR
 Environment=PYTHONPATH=$INSTALL_DIR
+Environment=PAWVISION_HOST=0.0.0.0
+Environment=PAWVISION_PORT=5001
 
 [Install]
 WantedBy=multi-user.target
@@ -97,9 +93,8 @@ sudo systemctl enable pawvision
 
 # Test installation
 echo "🧪 Testing installation..."
-source "$INSTALL_DIR/venv/bin/activate"
 cd "$INSTALL_DIR"
-if python3 -c "import pawvision; print('✅ PawVision module loads successfully')" 2>/dev/null; then
+if "$INSTALL_DIR/.venv/bin/python" -c "import pawvision; print('✅ PawVision module loads successfully')" 2>/dev/null; then
     echo "✅ Installation test passed"
 else
     echo "⚠️ Warning: Installation test failed"

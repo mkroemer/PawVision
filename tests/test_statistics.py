@@ -33,15 +33,17 @@ class TestStatisticsManager(unittest.TestCase):
         self.assertTrue(result2)
         self.assertTrue(result3)
         summary = self.stats_manager.get_summary()
-        total_presses = summary.get("button_presses", {}).get("total", 0)
+        total_presses = summary.get("total_button_presses", 0)
         self.assertGreaterEqual(total_presses, 2)
 
     def test_video_play_recording(self):
         video_path = "/test/video.mp4"
         self.stats_manager.record_video_play(video_path, "button")
         self.stats_manager.record_video_play(video_path, "api")
+        self.stats_manager.record_video_viewing(video_path, 120)
         summary = self.stats_manager.get_summary()
-        self.assertGreaterEqual(len(summary.get("recent_events", [])), 0)
+        self.assertEqual(summary.get("total_viewing_minutes"), 2.0)
+        self.assertGreaterEqual(len(summary.get("recent_activity", [])), 1)
 
     def test_stats_persistence(self):
         self.stats_manager.record_button_press("play")
@@ -52,10 +54,8 @@ class TestStatisticsManager(unittest.TestCase):
             enabled=True
         )
         summary = new_manager.get_summary()
-        total_presses = summary.get("button_presses", {}).get("total", 0)
-        total_api_calls = summary.get("api_calls", {}).get("total", 0)
+        total_presses = summary.get("total_button_presses", 0)
         self.assertGreaterEqual(total_presses, 1)
-        self.assertGreaterEqual(total_api_calls, 1)
 
     def test_disabled_statistics(self):
         disabled_manager = StatisticsManager(

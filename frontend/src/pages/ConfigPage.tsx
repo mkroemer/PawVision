@@ -19,7 +19,7 @@ import {
 
 export default function ConfigPage() {
   const { t, i18n } = useTranslation();
-  const { config, updateConfig } = useConfig();
+  const { config, updateConfig, resetConfig, testGpio } = useConfig();
   const { showSuccess, showError } = useToast();
   const { theme, setTheme } = useTheme();
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -45,19 +45,19 @@ export default function ConfigPage() {
   useEffect(() => {
     if (config) {
       setFormData({
-        gpio_enabled: config.gpio_enabled || false,
-        auto_play: config.auto_play || false,
-        volume: config.volume || 50,
-        playback_duration_minutes: config.playback_duration_minutes || 30,
-        youtube_quality: config.youtube_quality || '720p',
+        gpio_enabled: config.gpio_enabled ?? false,
+        auto_play: config.auto_play ?? false,
+        volume: config.volume ?? 50,
+        playback_duration_minutes: config.playback_duration_minutes ?? 30,
+        youtube_quality: config.youtube_quality ?? '720p',
         play_schedule: config.play_schedule || [],
-        night_mode_start: config.night_mode_start || '22:00',
-        night_mode_end: config.night_mode_end || '06:00',
-        night_mode_disable_playback: config.night_mode_disable_playback || false,
-        night_mode_volume: config.night_mode_volume || 30,
-        motion_sensor_enabled: config.motion_sensor_enabled || false,
-        motion_stop_enabled: config.motion_stop_enabled || false,
-        motion_stop_timeout_seconds: config.motion_stop_timeout_seconds || 300,
+        night_mode_start: config.night_mode_start ?? '22:00',
+        night_mode_end: config.night_mode_end ?? '06:00',
+        night_mode_disable_playback: config.night_mode_disable_playback ?? false,
+        night_mode_volume: config.night_mode_volume ?? 30,
+        motion_sensor_enabled: config.motion_sensor_enabled ?? false,
+        motion_stop_enabled: config.motion_stop_enabled ?? false,
+        motion_stop_timeout_seconds: config.motion_stop_timeout_seconds ?? 300,
       });
     }
   }, [config]);
@@ -71,6 +71,25 @@ export default function ConfigPage() {
       console.error('Config save error:', error);
       const errorMessage = error?.message || t('messages.error');
       showError(errorMessage);
+    }
+  };
+
+  const handleReset = async () => {
+    if (!window.confirm(t('config.resetConfirm', 'Reset all device settings to their defaults?'))) return;
+    try {
+      await resetConfig();
+      showSuccess(t('messages.saveSuccess'));
+    } catch (error: any) {
+      showError(error.message || t('messages.error'));
+    }
+  };
+
+  const handleTestGpio = async () => {
+    try {
+      const response = await testGpio();
+      showSuccess(response.message || t('config.testGpio'));
+    } catch (error: any) {
+      showError(error.message || t('messages.error'));
     }
   };
 
@@ -402,7 +421,7 @@ export default function ConfigPage() {
                   />
                 </div>
 
-                <Button variant="outline" className="w-full">
+                <Button variant="outline" className="w-full" onClick={handleTestGpio}>
                   {t('config.testGpio')}
                 </Button>
               </div>
@@ -482,7 +501,7 @@ export default function ConfigPage() {
             <Save className="mr-2 h-4 w-4" />
             {t('config.save')}
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleReset}>
             <RotateCcw className="mr-2 h-4 w-4" />
             {t('config.reset')}
           </Button>

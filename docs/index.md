@@ -28,7 +28,7 @@ PawVision is a Raspberry Pi-based "Pet TV" system that plays random videos for y
    curl -sSL https://raw.githubusercontent.com/mkroemer/pawvision/main/install.sh | bash
    ```
 2. **Access Web Interface**:
-   Open `http://<pi-ip>:5000` in your browser
+   Open `http://<pi-ip>:5001` in your browser
 3. **Upload Videos**:
    Use the web interface to upload your pet's favorite videos
 4. **Configure Settings**:

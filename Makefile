@@ -21,38 +21,38 @@ help:
 
 # Installation
 install:
-	pip install -r requirements.txt
+	uv sync --locked --no-dev
 
 install-dev:
-	pip install -r requirements-dev.txt
+	uv sync --locked --group dev
 
 # Testing
 test:
-	pytest tests/ -v
+	uv run pytest tests/ -v
 
 test-unit:
-	pytest tests/ -v -m "not integration"
+	uv run pytest tests/ -v -m "not integration"
 
 test-integration:
-	pytest tests/ -v -m integration
+	uv run pytest tests/ -v -m integration
 
 test-cov:
-	pytest tests/ -v --cov=pawvision --cov-report=html --cov-report=term-missing
+	uv run pytest tests/ -v --cov=pawvision --cov-report=html --cov-report=term-missing
 
 # Code quality
 lint:
-	flake8 pawvision/ tests/
-	mypy pawvision/ --ignore-missing-imports
-	bandit -r pawvision/ -c pyproject.toml
+	uv run flake8 pawvision/ tests/
+	uv run mypy pawvision/ --ignore-missing-imports
+	uv run bandit -r pawvision/ -c pyproject.toml
 
 format:
-	black pawvision/ tests/
-	isort pawvision/ tests/
+	uv run black pawvision/ tests/
+	uv run isort pawvision/ tests/
 
 # Security
 security:
-	bandit -r pawvision/ -c pyproject.toml
-	safety check
+	uv run bandit -r pawvision/ -c pyproject.toml
+	uv run safety check
 
 # Build and packaging
 clean:
@@ -66,15 +66,15 @@ clean:
 	find . -type f -name "*.pyc" -delete
 
 build: clean
-	python -m build
+	uv build
 
 # Development setup
 pre-commit:
-	pre-commit install
+	uv run pre-commit install
 
 # Development server
 dev:
-	python main.py
+	uv run python main.py
 
 # Check everything before commit
 check: format lint test

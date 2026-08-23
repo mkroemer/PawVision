@@ -5,6 +5,7 @@ import os
 import sqlite3
 from datetime import datetime
 from flask import Blueprint, request, jsonify
+from ..statistics import VIDEO_PLAY_EVENT, VIDEO_VIEWING_EVENT, EVENT_START
 
 statistics_bp = Blueprint('statistics', __name__, url_prefix='/api/statistics')
 logger = logging.getLogger(__name__)
@@ -12,6 +13,8 @@ logger = logging.getLogger(__name__)
 
 def init_statistics_routes(app_context):
     """Initialize statistics routes with app context."""
+    global statistics_bp
+    statistics_bp = Blueprint('statistics', __name__, url_prefix='/api/statistics')
     statistics_manager = app_context.get('statistics_manager')
     video_player = app_context['video_player']
     gpio_manager = app_context.get('gpio_manager')
@@ -210,11 +213,17 @@ def init_statistics_routes(app_context):
             cursor = conn.cursor()
 
             # Total plays
-            cursor.execute("SELECT COUNT(*) as count FROM events WHERE event_type = 'video' AND action = 'play'")
+            cursor.execute(
+                "SELECT COUNT(*) as count FROM events WHERE event_type = ? AND action = ?",
+                (VIDEO_PLAY_EVENT, EVENT_START),
+            )
             total_plays = cursor.fetchone()['count']
 
             # Total duration
-            cursor.execute("SELECT SUM(duration) as total FROM events WHERE event_type = 'video' AND duration IS NOT NULL")
+            cursor.execute(
+                "SELECT SUM(duration) as total FROM events WHERE event_type = ? AND duration IS NOT NULL",
+                (VIDEO_VIEWING_EVENT,),
+            )
             result = cursor.fetchone()
             total_duration = result['total'] or 0
 
@@ -222,11 +231,11 @@ def init_statistics_routes(app_context):
             cursor.execute("""
                 SELECT video_file, COUNT(*) as play_count
                 FROM events
-                WHERE event_type = 'video' AND action = 'play' AND video_file IS NOT NULL
+                WHERE event_type = ? AND action = ? AND video_file IS NOT NULL
                 GROUP BY video_file
                 ORDER BY play_count DESC
                 LIMIT 1
-            """)
+            """, (VIDEO_PLAY_EVENT, EVENT_START))
             fav_row = cursor.fetchone()
             favorite_video = None
             if fav_row and fav_row['video_file']:
@@ -239,10 +248,10 @@ def init_statistics_routes(app_context):
             cursor.execute("""
                 SELECT video_file, timestamp, duration
                 FROM events
-                WHERE event_type = 'video' AND action = 'play' AND video_file IS NOT NULL
+                WHERE event_type = ? AND action = ? AND video_file IS NOT NULL
                 ORDER BY timestamp DESC
                 LIMIT 10
-            """)
+            """, (VIDEO_PLAY_EVENT, EVENT_START))
             recent_rows = cursor.fetchall()
             recent_plays = [
                 {
@@ -287,12 +296,12 @@ def init_statistics_routes(app_context):
             cursor.execute("""
                 SELECT DATE(timestamp) as date, COUNT(*) as plays
                 FROM events
-                WHERE event_type = 'video'
-                  AND action = 'play'
+                WHERE event_type = ?
+                  AND action = ?
                   AND timestamp >= datetime('now', '-' || ? || ' days')
                 GROUP BY DATE(timestamp)
                 ORDER BY date ASC
-            """, (days,))
+            """, (VIDEO_PLAY_EVENT, EVENT_START, days))
 
             rows = cursor.fetchall()
             plays_by_day = [
@@ -334,13 +343,13 @@ def init_statistics_routes(app_context):
                     COUNT(*) as play_count,
                     SUM(duration) as total_duration
                 FROM events
-                WHERE event_type = 'video'
-                  AND action = 'play'
+                WHERE event_type = ?
+                  AND action = ?
                   AND video_file IS NOT NULL
                 GROUP BY video_file
                 ORDER BY play_count DESC
                 LIMIT ?
-            """, (limit,))
+            """, (VIDEO_PLAY_EVENT, EVENT_START, limit))
 
             rows = cursor.fetchall()
             plays_by_video = [

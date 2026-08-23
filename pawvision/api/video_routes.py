@@ -15,6 +15,8 @@ def init_video_routes(app_context):
     Args:
         app_context: Dict with 'video_player', 'validator', 'statistics_manager', 'config'
     """
+    global video_bp
+    video_bp = Blueprint('video', __name__, url_prefix='/api/video')
     video_player = app_context['video_player']
     validator = app_context['validator']
     statistics_manager = app_context.get('statistics_manager')

@@ -9,6 +9,12 @@ from typing import Dict
 from threading import Lock
 
 
+VIDEO_PLAY_EVENT = "video_play"
+VIDEO_VIEWING_EVENT = "video_viewing"
+EVENT_START = "start"
+EVENT_END = "end"
+
+
 class StatisticsManager:
     """Manages PawVision usage statistics with SQLite backend."""
 
@@ -41,8 +47,10 @@ class StatisticsManager:
     def _init_database(self):
         """Initialize SQLite database with required schema."""
         try:
-            # Ensure directory exists
-            os.makedirs(os.path.dirname(self.db_file), exist_ok=True)
+            # A filename in the working directory has no parent component.
+            db_dir = os.path.dirname(self.db_file)
+            if db_dir:
+                os.makedirs(db_dir, exist_ok=True)
 
             with sqlite3.connect(self.db_file) as conn:
                 conn.execute(
@@ -200,8 +208,8 @@ class StatisticsManager:
 
         # Log detailed event to SQLite
         self._log_event(
-            event_type="video_play",
-            action="start",
+            event_type=VIDEO_PLAY_EVENT,
+            action=EVENT_START,
             details={"video_duration": duration},
             video_file=video_file,
             duration=duration,
@@ -217,14 +225,15 @@ class StatisticsManager:
 
         # Log detailed event to SQLite
         self._log_event(
-            event_type="video_viewing",
-            action="end",
+            event_type=VIDEO_VIEWING_EVENT,
+            action=EVENT_END,
             details={
                 "viewing_duration": viewing_duration,
                 "end_reason": end_reason,  # "manual", "timeout", "motion_sensor"
                 "duration_minutes": round(viewing_duration / 60, 2),
             },
             video_file=video_file,
+            duration=viewing_duration,
         )
 
         self.logger.info(
@@ -282,15 +291,21 @@ class StatisticsManager:
                     "SELECT COUNT(*) FROM events WHERE event_type = 'button_press' AND date(timestamp) = date('now')"
                 ).fetchone()[0]
 
+                total_api_calls = conn.execute(
+                    "SELECT COUNT(*) FROM events WHERE event_type = 'api_call'"
+                ).fetchone()[0]
+
                 # Get total viewing duration (in minutes)
                 total_viewing_result = conn.execute(
-                    "SELECT COALESCE(SUM(duration), 0) FROM events WHERE event_type = 'video_viewing'"
+                    "SELECT COALESCE(SUM(duration), 0) FROM events WHERE event_type = ?",
+                    (VIDEO_VIEWING_EVENT,),
                 ).fetchone()
                 total_viewing_minutes = round(total_viewing_result[0] / 60, 1) if total_viewing_result[0] else 0
 
                 # Get yesterday's viewing duration
                 yesterday_viewing_result = conn.execute(
-                    "SELECT COALESCE(SUM(duration), 0) FROM events WHERE event_type = 'video_viewing' AND date(timestamp) = date('now', '-1 day')"
+                    "SELECT COALESCE(SUM(duration), 0) FROM events WHERE event_type = ? AND date(timestamp) = date('now', '-1 day')",
+                    (VIDEO_VIEWING_EVENT,),
                 ).fetchone()
                 yesterday_viewing_minutes = (
                     round(yesterday_viewing_result[0] / 60, 1) if yesterday_viewing_result[0] else 0
@@ -328,9 +343,10 @@ class StatisticsManager:
                         days_active = (date.today() - first_date).days + 1
                         daily_average = total_button_presses / max(1, days_active)
 
-                return {
+                summary = {
                     "total_button_presses": total_button_presses,
                     "today_button_presses": today_button_presses,
+                    "total_api_calls": total_api_calls,
                     "daily_average": daily_average,
                     "peak_hour": peak_hour,
                     "total_viewing_minutes": total_viewing_minutes,
@@ -342,7 +358,16 @@ class StatisticsManager:
                         }
                         for event in recent_events
                     ],
+                    # Keep the original nested shape available for older API
+                    # consumers while exposing the newer flat fields above.
+                    "button_presses": {
+                        "total": total_button_presses,
+                        "today": today_button_presses,
+                        "daily_average": daily_average,
+                    },
+                    "api_calls": {"total": total_api_calls},
                 }
+                return summary
 
         except sqlite3.Error as e:
             self.logger.error("Error getting statistics summary: %s", e)

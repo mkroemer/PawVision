@@ -40,9 +40,26 @@ export const useConfig = () => {
     }
   }, [fetchConfig]);
 
+  const resetConfig = useCallback(async () => {
+    const response = await configService.reset();
+    if (!response.success) {
+      throw new Error(response.message || 'Failed to reset config');
+    }
+    await fetchConfig();
+    return response;
+  }, [fetchConfig]);
+
+  const testGpio = useCallback(async () => {
+    const response = await configService.testGpio();
+    if (!response.success) {
+      throw new Error(response.message || 'GPIO test failed');
+    }
+    return response;
+  }, []);
+
   useEffect(() => {
     fetchConfig();
   }, [fetchConfig]);
 
-  return { config, loading, error, refetch: fetchConfig, updateConfig };
+  return { config, loading, error, refetch: fetchConfig, updateConfig, resetConfig, testGpio };
 };

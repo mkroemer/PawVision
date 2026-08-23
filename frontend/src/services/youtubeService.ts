@@ -8,7 +8,7 @@ export const youtubeService = {
   async download(
     url: string, 
     startTime?: number, 
-    endTime?: number,
+    endOffsetSeconds?: number,
     quality: string = '720p'
   ): Promise<ApiResponse> {
     return api.post('/youtube/add', { 
@@ -16,7 +16,7 @@ export const youtubeService = {
       quality,
       download: true, // This tells the backend to download the video
       start_time: startTime || 0,
-      end_time: endTime
+      end_offset_seconds: endOffsetSeconds
     });
   },
 
@@ -24,7 +24,7 @@ export const youtubeService = {
   async add(
     url: string, 
     startTime?: number,
-    endTime?: number,
+    endOffsetSeconds?: number,
     quality: string = '720p', 
     download: boolean = false
   ): Promise<ApiResponse> {
@@ -33,18 +33,13 @@ export const youtubeService = {
       quality,
       download,
       start_time: startTime || 0,
-      end_time: endTime
+      end_offset_seconds: endOffsetSeconds
     });
   },
 
   // Get download progress
   async getProgress(taskId: string): Promise<ApiResponse> {
-    return api.get(`/youtube/progress/${taskId}`);
-  },
-
-  // Cancel download
-  async cancel(taskId: string): Promise<ApiResponse> {
-    return api.post(`/youtube/cancel/${taskId}`);
+    return api.get(`/youtube/download/progress/${taskId}`);
   },
 
   // Validate YouTube URL

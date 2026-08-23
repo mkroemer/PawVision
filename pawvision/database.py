@@ -66,11 +66,24 @@ class VideoEntry:
 
         return max(0.0, end - start)
 
+    def get_effective_duration(self) -> Optional[float]:
+        """Return the configured playable duration.
+
+        Kept as the public library-facing name for compatibility with existing
+        callers and exports.  ``get_playback_duration`` remains the canonical
+        implementation.
+        """
+        return self.get_playback_duration()
+
     def is_stream_expired(self) -> bool:
         """Check if YouTube stream URL is expired."""
         if not self.is_youtube or not self.stream_expires:
             return False
         return datetime.now() >= self.stream_expires
+
+    def is_stream_valid(self) -> bool:
+        """Whether a YouTube entry has a usable direct stream URL."""
+        return bool(self.is_youtube and self.stream_url and not self.is_stream_expired())
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
@@ -317,9 +330,11 @@ class PawVisionDatabase:
         try:
             with self.db_lock:
                 with self._get_connection() as conn:
-                    conn.execute("DELETE FROM videos WHERE path = ?", (path,))
+                    cursor = conn.execute("DELETE FROM videos WHERE path = ?", (path,))
                     conn.commit()
 
+            if cursor.rowcount == 0:
+                return False
             self.logger.debug("Video removed: %s", path)
             return True
 
@@ -505,6 +520,18 @@ class PawVisionDatabase:
             True if successful, False otherwise
         """
         try:
+            existing_entry = self.get_video(path)
+            if existing_entry is None:
+                entry = VideoEntry(
+                    path=path,
+                    title=title,
+                    custom_start_time=(
+                        custom_start_time if custom_start_time is not None else 0.0
+                    ),
+                    custom_end_time=custom_end_time,
+                )
+                return self.add_or_update_video(entry)
+
             # Build update query dynamically based on provided parameters
             updates = []
             params = []

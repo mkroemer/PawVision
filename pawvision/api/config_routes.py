@@ -2,6 +2,7 @@
 
 import logging
 from flask import Blueprint, request, jsonify
+from ..config import PawVisionConfig
 
 config_bp = Blueprint('config', __name__, url_prefix='/api/config')
 logger = logging.getLogger(__name__)
@@ -9,6 +10,8 @@ logger = logging.getLogger(__name__)
 
 def init_config_routes(app_context):
     """Initialize config routes with app context."""
+    global config_bp
+    config_bp = Blueprint('config', __name__, url_prefix='/api/config')
     config = app_context['config']
     config_manager = app_context.get('config_manager')
     gpio_manager = app_context.get('gpio_manager')
@@ -45,52 +48,55 @@ def init_config_routes(app_context):
             if not data:
                 return jsonify({'success': False, 'message': 'No data provided'}), 400
 
-            logger.info('Received config update request with data: %s', data)
-
-            # Update config values
-            if 'gpio_enabled' in data:
-                config.button_enabled = data['gpio_enabled']
-            if 'auto_play' in data:
-                config.auto_play = bool(data['auto_play'])
-            if 'volume' in data:
-                config.volume = max(0, min(100, int(data['volume'])))
-            if 'playback_duration_minutes' in data:
-                config.playback_duration_minutes = max(1, min(120, int(data['playback_duration_minutes'])))
-            if 'youtube_quality' in data:
-                config.youtube_default_quality = data['youtube_quality']
-            if 'play_schedule' in data:
-                # Validate and set play_schedule as a list of time strings
-                schedule = data['play_schedule']
-                logger.debug('Received play_schedule: %s (type: %s)', schedule, type(schedule))
-                if isinstance(schedule, list):
-                    # Filter out empty strings and invalid values
-                    filtered_schedule = [t for t in schedule if t and isinstance(t, str) and t.strip()]
-                    logger.debug('Filtered play_schedule: %s', filtered_schedule)
-                    config.play_schedule = filtered_schedule
-                else:
-                    config.play_schedule = []
-            if 'night_mode_start' in data:
-                config.night_mode_start = data['night_mode_start']
-            if 'night_mode_end' in data:
-                config.night_mode_end = data['night_mode_end']
-            if 'night_mode_disable_playback' in data:
-                config.night_mode_disable_playback = data['night_mode_disable_playback']
-            if 'night_mode_volume' in data:
-                config.night_mode_volume = max(0, min(100, int(data['night_mode_volume'])))
-            if 'motion_sensor_enabled' in data:
-                config.motion_sensor_enabled = data['motion_sensor_enabled']
-            if 'motion_stop_enabled' in data:
-                config.motion_stop_enabled = data['motion_stop_enabled']
-            if 'motion_stop_timeout_seconds' in data:
-                config.motion_stop_timeout_seconds = int(data['motion_stop_timeout_seconds'])
-
-            # Save configuration
-            if config_manager:
-                config_manager.save_config(config)
-                logger.info('Configuration updated via API')
-                return jsonify({'success': True, 'message': 'Configuration saved successfully'}), 200
-            else:
+            if not config_manager:
                 return jsonify({'success': False, 'message': 'Configuration manager not available'}), 500
+
+            field_map = {
+                'gpio_enabled': 'button_enabled',
+                'auto_play': 'auto_play',
+                'volume': 'volume',
+                'playback_duration_minutes': 'playback_duration_minutes',
+                'youtube_quality': 'youtube_default_quality',
+                'play_schedule': 'play_schedule',
+                'night_mode_start': 'night_mode_start',
+                'night_mode_end': 'night_mode_end',
+                'night_mode_disable_playback': 'night_mode_disable_playback',
+                'night_mode_volume': 'night_mode_volume',
+                'motion_sensor_enabled': 'motion_sensor_enabled',
+                'motion_stop_enabled': 'motion_stop_enabled',
+                'motion_stop_timeout_seconds': 'motion_stop_timeout_seconds',
+            }
+            unknown_fields = set(data) - set(field_map)
+            if unknown_fields:
+                return jsonify({'success': False, 'message': 'Unsupported configuration fields: ' + ', '.join(sorted(unknown_fields))}), 400
+
+            updates = {field_map[key]: value for key, value in data.items()}
+            boolean_fields = {'button_enabled', 'auto_play', 'night_mode_disable_playback', 'motion_sensor_enabled', 'motion_stop_enabled'}
+            invalid_boolean = [key for key in boolean_fields if key in updates and not isinstance(updates[key], bool)]
+            if invalid_boolean:
+                return jsonify({'success': False, 'message': f'{invalid_boolean[0]} must be a boolean'}), 400
+
+            numeric_fields = {
+                'volume', 'playback_duration_minutes', 'night_mode_volume',
+                'motion_stop_timeout_seconds',
+            }
+            invalid_number = [
+                key for key in numeric_fields
+                if key in updates and (isinstance(updates[key], bool) or not isinstance(updates[key], (int, float)))
+            ]
+            if invalid_number:
+                return jsonify({'success': False, 'message': f'{invalid_number[0]} must be a number'}), 400
+            if 'play_schedule' in updates and not isinstance(updates['play_schedule'], list):
+                return jsonify({'success': False, 'message': 'play_schedule must be a list'}), 400
+
+            # Validate a new instance before persisting or changing the live one.
+            new_config = PawVisionConfig(**{**config.to_dict(), **updates})
+            config_manager.save_config(new_config)
+            for key, value in new_config.to_dict().items():
+                setattr(config, key, value)
+
+            logger.info('Configuration updated via API: %s', sorted(data))
+            return jsonify({'success': True, 'message': 'Configuration saved successfully'}), 200
 
         except ValueError as e:
             # Configuration validation error - extract the specific field that failed

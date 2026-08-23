@@ -12,33 +12,24 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.9', '3.10', '3.11', '3.12']
     
     steps:
     - uses: actions/checkout@v3
     
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+    - name: Set up uv and Python ${{ matrix.python-version }}
+      uses: astral-sh/setup-uv@v6
       with:
         python-version: ${{ matrix.python-version }}
-    
-    - name: Cache pip packages
-      uses: actions/cache@v3
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
+        enable-cache: true
     
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install -r requirements-dev.txt
+        uv sync --locked --group dev
     
     - name: Run tests
       run: |
-        pytest tests/ -v --cov=pawvision --cov-report=xml --cov-report=term-missing
+        uv run pytest tests/ -v --cov=pawvision --cov-report=xml --cov-report=term-missing
     
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
@@ -54,33 +45,33 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     
-    - name: Set up Python
-      uses: actions/setup-python@v4
+    - name: Set up uv and Python
+      uses: astral-sh/setup-uv@v6
       with:
         python-version: '3.11'
+        enable-cache: true
     
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements-dev.txt
+        uv sync --locked --group dev
     
     - name: Run flake8
       run: |
-        flake8 pawvision/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics
-        flake8 pawvision/ tests/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        uv run flake8 pawvision/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics
+        uv run flake8 pawvision/ tests/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     
     - name: Run black check
       run: |
-        black --check pawvision/ tests/
+        uv run black --check pawvision/ tests/
     
     - name: Run mypy
       run: |
-        mypy pawvision/ --ignore-missing-imports
+        uv run mypy pawvision/ --ignore-missing-imports
       continue-on-error: true
     
     - name: Run bandit security check
       run: |
-        bandit -r pawvision/ -c pyproject.toml
+        uv run bandit -r pawvision/ -c pyproject.toml
       continue-on-error: true
 
   build:

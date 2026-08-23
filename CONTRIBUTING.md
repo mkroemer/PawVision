@@ -22,26 +22,19 @@ By participating in this project, you agree to maintain a respectful and inclusi
    cd PawVision
    ```
 
-2. **Create a virtual environment**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   pip install -r requirements-dev.txt
-   ```
+2. **Install the locked development environment**
+    ```bash
+    uv sync --locked --group dev
+    ```
 
 4. **Run tests to verify setup**
    ```bash
-   pytest tests/ -v
+   uv run pytest tests/ -v
    ```
 
 5. **Start the development server**
    ```bash
-   python main.py
+   uv run python main.py
    ```
    The application will auto-detect dev mode and run on `http://localhost:5001`
 
@@ -178,16 +171,16 @@ class TestVideoPlayer(unittest.TestCase):
 
 ```bash
 # Run all tests
-pytest tests/ -v
+ uv run pytest tests/ -v
 
 # Run specific test file
-pytest tests/test_video_player.py -v
+ uv run pytest tests/test_video_player.py -v
 
 # Run with coverage
-pytest tests/ --cov=pawvision --cov-report=html
+ uv run pytest tests/ --cov=pawvision --cov-report=html
 
 # Run only unit tests (skip integration)
-pytest tests/ -v -m "not integration"
+ uv run pytest tests/ -v -m "not integration"
 ```
 
 ## 📚 Documentation Guidelines

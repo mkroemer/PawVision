@@ -141,12 +141,9 @@ setup_python_env() {
     
     cd "$INSTALL_DIR"
     
-    # Create virtual environment
-    python3 -m venv venv
-    
-    # Install Python dependencies
-    ./venv/bin/pip install --upgrade pip > /dev/null
-    ./venv/bin/pip install -r requirements.txt > /dev/null
+    # Install uv locally and create the locked production environment.
+    curl -LsSf https://astral.sh/uv/install.sh | UV_INSTALL_DIR="$INSTALL_DIR/.uv-bin" sh
+    "$INSTALL_DIR/.uv-bin/uv" sync --locked --no-dev > /dev/null
     
     echo -e "${GREEN}✅ Python environment configured${NC}"
 }
@@ -166,8 +163,10 @@ Type=simple
 User=$SYSTEM_USER
 Group=$SYSTEM_USER
 WorkingDirectory=$INSTALL_DIR
-Environment=PATH=$INSTALL_DIR/venv/bin
-ExecStart=$INSTALL_DIR/venv/bin/python main.py
+Environment=PATH=$INSTALL_DIR/.venv/bin
+Environment=PAWVISION_HOST=0.0.0.0
+Environment=PAWVISION_PORT=5001
+ExecStart=$INSTALL_DIR/.venv/bin/python main.py
 Restart=always
 RestartSec=10
 StandardOutput=journal

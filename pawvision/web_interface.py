@@ -2,8 +2,10 @@
 
 import logging
 import os
+import secrets
+import hmac
 from datetime import datetime
-from flask import Flask, send_from_directory, jsonify
+from flask import Flask, request, send_from_directory, jsonify
 from werkzeug.exceptions import RequestEntityTooLarge
 
 from .security import SecurityValidator, setup_security_headers
@@ -27,12 +29,14 @@ class WebInterface:
         self.app = Flask(__name__, template_folder="../templates", static_folder="../static")
 
         # Configure Flask
-        self.app.config["SECRET_KEY"] = "pawvision-secret-key-change-in-production"
+        self.app.config["SECRET_KEY"] = os.environ.get("PAWVISION_SECRET_KEY", secrets.token_urlsafe(32))
         self.app.config["MAX_CONTENT_LENGTH"] = SecurityValidator.MAX_FILE_SIZE
+        self.api_token = os.environ.get("PAWVISION_API_TOKEN")
 
         # Initialize security
         self.validator = SecurityValidator()
         setup_security_headers(self.app)
+        self._register_api_authentication()
 
         # Register frontend route
         self._register_frontend_route()
@@ -85,6 +89,22 @@ class WebInterface:
             if os.path.exists(os.path.join(thumbnails_dir, filename)):
                 return send_from_directory(thumbnails_dir, filename)
             return '', 404
+
+    def _register_api_authentication(self):
+        """Protect mutating API requests when a deployment token is configured."""
+        @self.app.before_request
+        def require_api_token():
+            if (
+                not self.api_token
+                or not request.path.startswith("/api/")
+                or request.method in {"GET", "HEAD", "OPTIONS"}
+            ):
+                return None
+
+            supplied_token = request.headers.get("X-PawVision-Token", "")
+            if not hmac.compare_digest(supplied_token, self.api_token):
+                return jsonify({"error": "Authentication required"}), 401
+            return None
 
     def _register_blueprints(self):
         """Register all API blueprints."""

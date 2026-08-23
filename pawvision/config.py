@@ -69,6 +69,8 @@ class PawVisionConfig:
         # Volume validation
         if not 0 <= self.volume <= 100:
             errors.append("Volume must be between 0 and 100")
+        if not 0 <= self.night_mode_volume <= 100:
+            errors.append("Night mode volume must be between 0 and 100")
 
         # Playback duration validation
         if self.playback_duration_minutes <= 0:
@@ -213,8 +215,10 @@ class ConfigManager:
     def save_config(self, config: PawVisionConfig):
         """Save configuration to file."""
         try:
-            # Ensure directory exists
-            os.makedirs(os.path.dirname(self.config_file), exist_ok=True)
+            # A filename in the working directory has no parent component.
+            config_dir = os.path.dirname(self.config_file)
+            if config_dir:
+                os.makedirs(config_dir, exist_ok=True)
 
             with open(self.config_file, "w", encoding="utf-8") as f:
                 json.dump(config.to_dict(), f, indent=2)
@@ -239,6 +243,9 @@ class ConfigManager:
 
 def get_video_directories(dev_mode: bool) -> List[str]:
     """Get video directories based on mode."""
+    data_dir = os.environ.get("PAWVISION_DATA_DIR")
+    if data_dir:
+        return [os.path.join(data_dir, "videos")]
     if dev_mode:
         return ["./videos"]
     else:
@@ -247,4 +254,10 @@ def get_video_directories(dev_mode: bool) -> List[str]:
 
 def get_default_port(dev_mode: bool) -> int:
     """Get default port based on mode."""
+    configured_port = os.environ.get("PAWVISION_PORT")
+    if configured_port:
+        try:
+            return int(configured_port)
+        except ValueError:
+            logging.getLogger(__name__).warning("Invalid PAWVISION_PORT: %s", configured_port)
     return 5001 if dev_mode else 5000

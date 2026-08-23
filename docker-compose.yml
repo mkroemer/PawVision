@@ -16,6 +16,9 @@ services:
       - ./pawvision.log:/data/pawvision.log
     environment:
       - PAWVISION_DEV_MODE=0
+      - PAWVISION_DATA_DIR=/data
+      - PAWVISION_HOST=0.0.0.0
+      - PAWVISION_PORT=5001
       - TZ=America/New_York
     restart: unless-stopped
     # For GPIO access on Raspberry Pi, add:

@@ -10,6 +10,8 @@ logger = logging.getLogger(__name__)
 
 def init_stream_routes(app_context):
     """Initialize stream routes with app context."""
+    global stream_bp
+    stream_bp = Blueprint('stream', __name__, url_prefix='/api')
     video_player = app_context['video_player']
     statistics_manager = app_context.get('statistics_manager')
 

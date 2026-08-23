@@ -9,6 +9,8 @@ logger = logging.getLogger(__name__)
 
 def init_playback_routes(app_context):
     """Initialize playback routes with app context."""
+    global playback_bp
+    playback_bp = Blueprint('playback', __name__, url_prefix='/api')
     video_player = app_context['video_player']
     statistics_manager = app_context.get('statistics_manager')
 

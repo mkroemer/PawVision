@@ -46,13 +46,6 @@ fi
 echo "📺 Installing VLC components..."
 sudo apt install -y vlc-bin vlc-plugin-base libvlc-dev
 
-# Create virtual environment for better dependency isolation
-echo "🐍 Setting up Python virtual environment..."
-if [ ! -d "$INSTALL_DIR/venv" ]; then
-    python3 -m venv "$INSTALL_DIR/venv"
-fi
-source "$INSTALL_DIR/venv/bin/activate"
-
 # Create necessary directories
 mkdir -p "$INSTALL_DIR/videos"
 mkdir -p "$INSTALL_DIR/templates"
@@ -60,19 +53,6 @@ mkdir -p "$INSTALL_DIR/static"
 mkdir -p "$INSTALL_DIR/pawvision"
 # Also ensure /media/usb exists for USB-mounted videos
 sudo mkdir -p "/media/usb"
-
-# Download and install Python dependencies from requirements.txt
-echo "📦 Installing Python dependencies..."
-curl -o "$INSTALL_DIR/requirements.txt" \
-    -L "https://raw.githubusercontent.com/$REPO_USER/$REPO_NAME/$BRANCH/requirements.txt"
-source "$INSTALL_DIR/venv/bin/activate"
-echo "📦 Installing Python dependencies (this may take a while)..."
-if pip install -r "$INSTALL_DIR/requirements.txt"; then
-    echo "✅ Python dependencies installed successfully"
-else
-    echo "❌ Error installing Python dependencies. Trying with --break-system-packages..."
-    pip install -r "$INSTALL_DIR/requirements.txt" --break-system-packages
-fi
 
 # Clone the entire repository to get all files
 echo "📥 Downloading latest PawVision files..."
@@ -265,20 +245,25 @@ elif [ "$FRONTEND_DEPLOYED" = false ]; then
     echo "📝 No frontend directory found - using fallback interface"
 fi
 
-# Copy any other important files
-cp requirements.txt "$INSTALL_DIR/" 2>/dev/null || echo "No requirements.txt found"
+# Copy dependency metadata for uv
+cp pyproject.toml uv.lock "$INSTALL_DIR/" 2>/dev/null || echo "Dependency metadata missing"
 cp .gitignore "$INSTALL_DIR/" 2>/dev/null || echo "No .gitignore found"
 
 # Clean up
 cd - > /dev/null
 rm -rf "$TEMP_DIR"
 
+# Install uv locally and create the locked production environment.
+echo "📦 Installing Python dependencies with uv..."
+curl -LsSf https://astral.sh/uv/install.sh | UV_INSTALL_DIR="$INSTALL_DIR/.uv-bin" sh
+(cd "$INSTALL_DIR" && "$INSTALL_DIR/.uv-bin/uv" sync --locked --no-dev)
+
 # Ensure proper ownership
 sudo chown -R pi:pi "$INSTALL_DIR"
 sudo chown -R pi:pi "/media/usb" 2>/dev/null || echo "Note: /media/usb ownership will be set when USB is mounted"
 
 # Make sure venv is properly owned and scripts are executable
-sudo chown -R pi:pi "$INSTALL_DIR/venv" 2>/dev/null || echo "Virtual environment ownership already correct"
+sudo chown -R pi:pi "$INSTALL_DIR/.venv" 2>/dev/null || echo "Virtual environment ownership already correct"
 chmod +x "$INSTALL_DIR/main.py" 2>/dev/null || echo "main.py already executable"
 
 # Handle settings - the new system automatically creates defaults if no config exists
@@ -298,11 +283,13 @@ Description=PawVision Service
 After=network.target
 
 [Service]
-ExecStart=$INSTALL_DIR/venv/bin/python $INSTALL_DIR/main.py
+ExecStart=$INSTALL_DIR/.venv/bin/python $INSTALL_DIR/main.py
 Restart=always
 User=pi
 WorkingDirectory=$INSTALL_DIR
 Environment=PYTHONPATH=$INSTALL_DIR
+Environment=PAWVISION_HOST=0.0.0.0
+Environment=PAWVISION_PORT=5001
 
 [Install]
 WantedBy=multi-user.target
@@ -313,15 +300,14 @@ fi
 
 # Test the installation
 echo "🧪 Testing PawVision installation..."
-source "$INSTALL_DIR/venv/bin/activate"
 cd "$INSTALL_DIR"
 
 # Test Python module import
-if python3 -c "import pawvision; print('✅ PawVision module loads successfully')" 2>/dev/null; then
+if "$INSTALL_DIR/.venv/bin/python" -c "import pawvision; print('✅ PawVision module loads successfully')" 2>/dev/null; then
     echo "✅ Module test passed"
 else
     echo "⚠️  Warning: PawVision module test failed - checking dependencies..."
-    python3 -c "
+    "$INSTALL_DIR/.venv/bin/python" -c "
 import sys
 try:
     import flask
@@ -364,7 +350,7 @@ sleep 3
 echo "📊 Final service status:"
 if sudo systemctl is-active --quiet pawvision; then
     echo "✅ PawVision service is running successfully"
-    echo "🌐 Access the web interface at: http://$(hostname -I | awk '{print $1}'):5000"
+    echo "🌐 Access the web interface at: http://$(hostname -I | awk '{print $1}'):5001"
 else
     echo "⚠️  Service may not have started properly"
     echo "📝 Check logs with: journalctl -u pawvision -f"
@@ -376,8 +362,8 @@ echo "🎉 PawVision $(if $FRESH_INSTALL; then echo 'installation'; else echo 'u
 echo ""
 echo "📊 Summary:"
 echo "   📁 Installation directory: $INSTALL_DIR"
-echo "   🐍 Virtual environment: $INSTALL_DIR/venv"
-echo "   🌐 Web interface: http://$(hostname -I | awk '{print $1}'):5000"
+echo "   🐍 Virtual environment: $INSTALL_DIR/.venv"
+echo "   🌐 Web interface: http://$(hostname -I | awk '{print $1}'):5001"
 echo "   📝 Configuration: $SETTINGS_FILE"
 echo ""
 echo "📖 Service management:"

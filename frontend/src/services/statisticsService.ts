@@ -1,7 +1,6 @@
 // Statistics API service
 
 import { api } from './api';
-import type { ApiResponse } from '@/types';
 
 export interface StatisticsSummary {
   total_plays: number;
@@ -53,17 +52,8 @@ export const statisticsService = {
     return response.data || [];
   },
 
-  // Get detailed statistics
-  async getDetailed(startDate?: string, endDate?: string): Promise<ApiResponse> {
-    const params = new URLSearchParams();
-    if (startDate) params.append('start', startDate);
-    if (endDate) params.append('end', endDate);
-    const query = params.toString() ? `?${params.toString()}` : '';
-    return api.get(`/statistics/detailed${query}`);
-  },
-
   // Reset statistics
-  async reset(): Promise<ApiResponse> {
-    return api.post('/statistics/reset');
+  async reset() {
+    return api.post('/statistics/clear');
   },
 };

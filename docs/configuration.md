@@ -40,7 +40,7 @@ This installer will:
 3. **Install dependencies**:
 
    ```bash
-    pip install -r requirements.txt
+    uv sync --locked --group dev
    ```
 4. **Run PawVision**:
 
@@ -52,7 +52,17 @@ This installer will:
 
 - **Comprehensive settings** all in one place
 - **Real-time monitoring** of your pet's viewing habits
-- http://raspberrypi.local:5000
+- http://raspberrypi.local:5001 (when installed using the supplied systemd installer)
+
+### Deployment environment
+
+The application defaults to loopback-only access. Set `PAWVISION_HOST=0.0.0.0`
+and `PAWVISION_PORT=5001` when it should be available on your LAN. Docker uses
+`PAWVISION_DATA_DIR=/data` for persistent settings, videos, and its database.
+
+Set `PAWVISION_SECRET_KEY` to a long random value. Optionally set
+`PAWVISION_API_TOKEN` to require the `X-PawVision-Token` header for mutating
+API requests.
 
 ## Configuration Options
 

@@ -14,6 +14,17 @@ curl -sSL https://raw.githubusercontent.com/mkroemer/pawvision/main/install.sh |
 
 Then open `http://<pi-ip>:5001` in your browser.
 
+## Deployment and security
+
+PawVision listens on loopback by default. The supplied systemd installers and
+Docker Compose configuration explicitly expose it on port `5001` for LAN use.
+Use `PAWVISION_HOST`, `PAWVISION_PORT`, and `PAWVISION_DATA_DIR` to customize a
+deployment.
+
+For a shared network, set a long random `PAWVISION_SECRET_KEY`. To protect
+state-changing API requests from scripts or reverse proxies, set
+`PAWVISION_API_TOKEN` and send it as the `X-PawVision-Token` request header.
+
 ## 📚 Documentation
 
 Complete documentation is available at: **[PawVision Docs](https://mkroemer.github.io/PawVision/)**
@@ -64,28 +75,36 @@ If you find PawVision helpful, please star the repository and share it with othe
 
 PawVision uses [pytest](https://docs.pytest.org/) for all unit and integration tests. All test files are located in the `tests/` directory and are organized by domain (e.g., config, statistics, web interface).
 
+Install [uv](https://docs.astral.sh/uv/) and create the locked development environment:
+
+```bash
+uv sync --locked --group dev
+```
+
+PawVision supports Python 3.9 and newer.
+
 To run all tests:
 
 ```bash
-python run_tests.py --all
+uv run pytest tests/ -v
 ```
 
 To run a specific test file:
 
 ```bash
-python run_tests.py --file tests/test_config.py
+uv run pytest tests/test_config.py -v
 ```
 
 To run a specific test class:
 
 ```bash
-python run_tests.py --class TestConfigManager
+uv run pytest tests/test_config.py::TestConfigManager -v
 ```
 
 To run a specific test class in a file:
 
 ```bash
-python run_tests.py --file tests/test_config.py --class TestConfigManager
+uv run pytest tests/test_config.py::TestConfigManager -v
 ```
 
 All tests should pass before submitting changes. Logging errors during test shutdown are harmless and only occur in test environments.

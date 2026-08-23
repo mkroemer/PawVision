@@ -702,7 +702,7 @@ class VideoPlayer:
                         "display_title": entry.get_display_title(),
                         "size": entry.size or 0,
                         "size_mb": (round((entry.size or 0) / (1024 * 1024), 1) if entry.size else 0),
-                        "modified": entry.updated_at or entry.created_at or "",
+                        "modified": entry.added_time.isoformat() if entry.added_time else "",
                         "duration": entry.duration,
                         "duration_str": (format_duration(entry.duration) if entry.duration else "Unknown"),
                         "custom_start_time": entry.custom_start_time,

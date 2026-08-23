@@ -2,7 +2,6 @@
 
 import logging
 import os
-from datetime import datetime
 from typing import List, Optional, Tuple
 from .database import PawVisionDatabase, VideoEntry
 from .youtube_manager import YouTubeManager
@@ -146,7 +145,15 @@ class VideoLibraryManager:
         playable = []
 
         for video in videos:
-            if not os.path.exists(video.path):
+            if video.is_youtube:
+                has_playback_source = (
+                    bool(video.download_path and os.path.exists(video.download_path))
+                    or video.is_stream_valid()
+                )
+            else:
+                has_playback_source = os.path.exists(video.path)
+
+            if not has_playback_source:
                 continue  # Skip missing files
 
             effective_duration = video.get_effective_duration()
@@ -217,7 +224,6 @@ class VideoLibraryManager:
         download_path = self.youtube_manager.download_video(video.youtube_id, quality)
         if download_path:
             video.download_path = download_path
-            video.updated_at = datetime.now().isoformat()
             return self.add_or_update_video(video)
 
         return False

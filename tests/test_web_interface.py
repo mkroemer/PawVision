@@ -29,6 +29,8 @@ class TestWebInterface(unittest.TestCase):
         self.video_player.video_files = []
         self.video_player.current_video = None
         self.video_player.is_playing = Mock(return_value=False)
+        self.video_player.is_paused = Mock(return_value=False)
+        self.video_player.get_current_video_info = Mock(return_value=None)
         self.video_player.get_all_videos = Mock(return_value=[])
         self.video_player.is_night_mode = Mock(return_value=False)
         self.video_player.play_random_video = Mock(return_value=True)
@@ -56,24 +58,23 @@ class TestWebInterface(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         data = response.get_json()
         self.assertIn('status', data)
-        self.assertIn('version', data)
         self.assertEqual(data['status'], 'healthy')
     def test_api_status_endpoint(self):
         response = self.client.get('/api/status')
         self.assertEqual(response.status_code, 200)
         data = response.get_json()
         self.assertIn('is_playing', data)
-        self.assertIn('video_count', data)
         self.assertFalse(data['is_playing'])
     def test_api_play_endpoint(self):
-        response = self.client.post('/api/play')
+        response = self.client.post('/api/play', data={'path': '/videos/test.mp4'})
         self.assertEqual(response.status_code, 200)
         data = response.get_json()
         self.assertIn('status', data)
-        self.assertEqual(data['status'], 'playing')
+        self.assertEqual(data['status'], 'success')
+        self.video_player.play_video.assert_called_once_with('/videos/test.mp4', triggered_by='web')
     def test_api_stop_endpoint(self):
         response = self.client.post('/api/stop')
         self.assertEqual(response.status_code, 200)
         data = response.get_json()
         self.assertIn('status', data)
-        self.assertEqual(data['status'], 'stopped')
+        self.assertEqual(data['status'], 'success')

@@ -30,6 +30,8 @@ class TestPawVisionConfig(unittest.TestCase):
         with self.assertRaises(ValueError):
             PawVisionConfig(volume=150)
         with self.assertRaises(ValueError):
+            PawVisionConfig(night_mode_volume=150)
+        with self.assertRaises(ValueError):
             PawVisionConfig(playback_duration_minutes=-5)
         with self.assertRaises(ValueError):
             PawVisionConfig(night_mode_start="25:00")
@@ -126,6 +128,18 @@ class TestConfigManager(unittest.TestCase):
             saved_data = json.load(f)
         self.assertEqual(saved_data['playback_duration_minutes'], 60)
         self.assertEqual(saved_data['volume'], 80)
+
+    def test_save_config_with_relative_filename(self):
+        """A config in the current directory does not require a parent path."""
+        original_cwd = os.getcwd()
+        with tempfile.TemporaryDirectory() as working_dir:
+            try:
+                os.chdir(working_dir)
+                manager = ConfigManager("pawvision_settings.json", dev_mode=True)
+                manager.save_config(PawVisionConfig())
+                self.assertTrue(os.path.exists("pawvision_settings.json"))
+            finally:
+                os.chdir(original_cwd)
     def test_invalid_config_handling(self):
         with open(self.config_file, 'w', encoding='utf-8') as f:
             f.write("invalid json content")

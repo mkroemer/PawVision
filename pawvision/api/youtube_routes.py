@@ -1,7 +1,7 @@
 """YouTube integration routes."""
 
 import logging
-from datetime import datetime
+import math
 from threading import Thread
 from flask import Blueprint, request, jsonify
 
@@ -11,6 +11,8 @@ logger = logging.getLogger(__name__)
 
 def init_youtube_routes(app_context):
     """Initialize YouTube routes with app context."""
+    global youtube_bp
+    youtube_bp = Blueprint('youtube', __name__, url_prefix='/api/youtube')
     video_player = app_context['video_player']
     download_progress = app_context.get('download_progress', {})
 
@@ -30,22 +32,26 @@ def init_youtube_routes(app_context):
                 return jsonify({'error': 'Invalid YouTube URL'}), 400
 
             title = data.get('title', '').strip() or None
-            start_time = data.get('start_time', 0.0)
-            end_time = data.get('end_time')
+            try:
+                start_time = float(data.get('start_time', 0.0))
+                end_offset = data.get('end_offset_seconds')
+                end_offset = float(end_offset) if end_offset is not None else None
+            except (TypeError, ValueError):
+                return jsonify({'error': 'Start time and end offset must be numbers'}), 400
             quality = data.get('quality', '720p')
             download = data.get('download', False)
 
-            if start_time < 0:
+            if not math.isfinite(start_time) or start_time < 0:
                 return jsonify({'error': 'Start time cannot be negative'}), 400
 
-            if end_time is not None and end_time <= start_time:
-                return jsonify({'error': 'End time must be after start time'}), 400
+            if end_offset is not None and (not math.isfinite(end_offset) or end_offset < 0):
+                return jsonify({'error': 'End offset cannot be negative'}), 400
 
             success = video_player.library_manager.add_youtube_video(
                 url=url,
                 custom_title=title,
                 custom_start_time=start_time,
-                custom_end_offset=end_time,
+                custom_end_offset=end_offset,
                 quality=quality,
                 download=download,
             )
@@ -124,7 +130,6 @@ def init_youtube_routes(app_context):
 
                 if download_path:
                     video_entry.download_path = download_path
-                    video_entry.updated_at = datetime.now().isoformat()
                     video_player.library_manager.add_or_update_video(video_entry)
 
                     download_progress[download_id] = {

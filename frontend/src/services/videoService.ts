@@ -99,7 +99,16 @@ export const videoService = {
   },
 
   // Update video info
-  async update(videoId: number, data: Partial<Video>): Promise<ApiResponse> {
-    return api.put(`/video/${videoId}`, data);
+  async update(videoPath: string, data: { title?: string; startTime?: number; endOffsetSeconds?: number }): Promise<ApiResponse> {
+    const formData = new FormData();
+    formData.append('path', videoPath);
+    if (data.title !== undefined) formData.append('title', data.title);
+    if (data.startTime !== undefined) formData.append('custom_start_time', String(data.startTime));
+    if (data.endOffsetSeconds !== undefined) formData.append('custom_end_offset', String(data.endOffsetSeconds));
+
+    const response = await fetch('/api/video/update', { method: 'POST', body: formData });
+    const responseData = await response.json();
+    if (!response.ok) throw new Error(responseData.error || 'Failed to update video');
+    return { success: true, message: responseData.message, data: responseData };
   },
 };

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { usePlaybackStatus } from '@/hooks/usePlaybackStatus';
 import { useVideos } from '@/hooks/useVideos';
 import { useToast } from '@/hooks/useToast';
@@ -9,64 +9,85 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Play, Square, Pause, PlayCircle, Volume2 } from 'lucide-react';
 import { HDMIStreamViewer } from '@/components/HDMIStreamViewer';
+import { useConfig } from '@/hooks/useConfig';
 
 export default function ControlPage() {
   const { t } = useTranslation();
   const { status, refetch } = usePlaybackStatus();
   const { videos } = useVideos();
+  const { config } = useConfig();
   const { showSuccess, showError } = useToast();
   const [volume, setVolume] = useState(100);
+  const [isActing, setIsActing] = useState(false);
+
+  useEffect(() => {
+    if (config?.volume !== undefined) setVolume(config.volume);
+  }, [config?.volume]);
 
   const handlePlay = async (videoPath: string) => {
     try {
+      setIsActing(true);
       await videoService.play(videoPath);
       showSuccess(t('control.playing'));
       await refetch();
     } catch (error) {
       showError(t('messages.error'));
+    } finally {
+      setIsActing(false);
     }
   };
 
   const handleStop = async () => {
     try {
+      setIsActing(true);
       await videoService.stop();
       showSuccess(t('control.stopped'));
       await refetch();
     } catch (error) {
       showError(t('messages.error'));
+    } finally {
+      setIsActing(false);
     }
   };
 
   const handlePause = async () => {
     try {
+      setIsActing(true);
       await videoService.pause();
       showSuccess(t('control.paused'));
       await refetch();
     } catch (error) {
       showError(t('messages.error'));
+    } finally {
+      setIsActing(false);
     }
   };
 
   const handleResume = async () => {
     try {
+      setIsActing(true);
       await videoService.resume();
       showSuccess(t('control.resumed'));
       await refetch();
     } catch (error) {
       showError(t('messages.error'));
+    } finally {
+      setIsActing(false);
     }
   };
 
-  const handleVolumeChange = async (value: number[]) => {
+  const handleVolumeChange = (value: number[]) => {
     const newVolume = value[0];
     setVolume(newVolume);
-    
-    // Only send to backend if video is playing
+  };
+
+  const commitVolumeChange = async (value: number[]) => {
+    const newVolume = value[0];
     if (status.is_playing) {
       try {
         await videoService.setVolume(newVolume);
       } catch (error) {
-        console.error('Failed to set volume:', error);
+        showError(t('messages.error'));
       }
     }
   };
@@ -105,6 +126,7 @@ export default function ControlPage() {
                   onClick={handleResume}
                   variant="default"
                   className="flex-1"
+                  disabled={isActing}
                 >
                   <PlayCircle className="mr-2 h-4 w-4" />
                   {t('control.resume')}
@@ -114,7 +136,7 @@ export default function ControlPage() {
                   onClick={handlePause}
                   variant="default"
                   className="flex-1"
-                  disabled={!status.is_playing}
+                  disabled={isActing || !status.is_playing}
                 >
                   <Pause className="mr-2 h-4 w-4" />
                   {t('control.pause')}
@@ -126,7 +148,7 @@ export default function ControlPage() {
                 onClick={handleStop}
                 variant="destructive"
                 className="flex-1"
-                disabled={!status.is_playing}
+                disabled={isActing || !status.is_playing}
               >
                 <Square className="mr-2 h-4 w-4" />
                 {t('control.stop')}
@@ -145,9 +167,10 @@ export default function ControlPage() {
               <Slider
                 value={[volume]}
                 onValueChange={handleVolumeChange}
+                onValueCommit={commitVolumeChange}
                 max={100}
                 step={1}
-                disabled={!status.is_playing}
+                disabled={isActing || !status.is_playing}
                 className="w-full"
               />
             </div>
@@ -189,6 +212,7 @@ export default function ControlPage() {
                     variant="outline"
                     className="w-full justify-start"
                     onClick={() => handlePlay(video.path)}
+                    disabled={isActing}
                   >
                     <Play className="mr-2 h-4 w-4" />
                     {video.title}

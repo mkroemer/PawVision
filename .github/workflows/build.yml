@@ -71,7 +71,7 @@ jobs:
         # Copy Python files
         cp -r pawvision/ package/pawvision/
         cp main.py package/pawvision/
-        cp requirements.txt package/pawvision/
+        cp pyproject.toml uv.lock package/pawvision/
         
         # Copy built frontend and templates
         cp -r build/static package/pawvision/

@@ -34,6 +34,7 @@ class PawVisionApp:
         self.web_thread = None
         self.running = False
         self._shutting_down = False
+        self._cleaned_up = False
 
         # Register cleanup
         atexit.register(self.cleanup)
@@ -56,7 +57,11 @@ class PawVisionApp:
         """Initialize all components."""
         try:
             # Determine configuration file path
-            if self.dev_mode:
+            data_dir = os.environ.get("PAWVISION_DATA_DIR")
+            if data_dir:
+                config_file = os.path.join(data_dir, "pawvision_settings.json")
+                log_file = os.path.join(data_dir, "pawvision.log")
+            elif self.dev_mode:
                 config_file = "./pawvision_settings.json"
                 log_file = "./pawvision.log"
             else:
@@ -81,6 +86,13 @@ class PawVisionApp:
             # Initialize configuration
             self.config_manager = ConfigManager(config_file, self.dev_mode)
             self.config = self.config_manager.load_config()
+
+            if data_dir:
+                self.config.statistics_file = os.path.join(data_dir, "pawvision_stats.json")
+                self.config.statistics_db = os.path.join(data_dir, "pawvision_stats.db")
+                self.config.database_path = os.path.join(data_dir, "pawvision.db")
+                self.config.youtube_cache_dir = os.path.join(data_dir, "youtube_cache")
+                self.config_manager.save_config(self.config)
 
             # Add dev_mode to config for components
             self.config.dev_mode = self.dev_mode
@@ -163,13 +175,13 @@ class PawVisionApp:
                 print("🔄 Hot reload enabled!")
 
                 # Run Flask directly in main thread with debug mode
-                self.web_interface.run(host="0.0.0.0", port=port, debug=True)
+                self.web_interface.run(host=os.environ.get("PAWVISION_HOST", "127.0.0.1"), port=port, debug=True)
             else:
                 # In production mode, use threading as before
                 self.web_thread = threading.Thread(
                     target=self.web_interface.run,
                     kwargs={
-                        "host": "0.0.0.0",
+                        "host": os.environ.get("PAWVISION_HOST", "127.0.0.1"),
                         "port": port,
                         "debug": False,
                     },
@@ -217,6 +229,10 @@ class PawVisionApp:
 
     def cleanup(self):
         """Clean up all resources."""
+        if self._cleaned_up:
+            return
+        self._cleaned_up = True
+
         if self.logger:
             self.logger.info("Cleaning up PawVision resources")
 
